@@ -1,0 +1,91 @@
+:root {
+  /* Colors */
+  --color-bg: #f2f2f7;
+  --color-surface: #ffffff;
+  --color-primary: #007aff;
+  --color-primary-light: #e8f1ff;
+  --color-text: #1c1c1e;
+  --color-text-secondary: #6c6c70;
+  --color-border: #c6c6c8;
+  --color-border-box: #3a3a3c;
+  --color-error: #ff3b30;
+  --color-given: #1c1c1e;
+  --color-input: #007aff;
+  --color-note: #5856d6;
+
+  /* Highlight states */
+  --color-selected: #bbdefb;
+  --color-related: #e8f4ff;
+  --color-same-value: #c8e6c9;
+  --color-highlighted: #fff3cd;
+
+  /* Layout */
+  --toolbar-height: 72px;
+  --numberpad-height: 88px;
+  --header-height: 52px;
+
+  /* Typography — fluid, no fixed px */
+  --font-cell: clamp(1.1rem, 4.5vw, 1.9rem);
+  --font-note: clamp(0.42rem, 1.6vw, 0.65rem);
+
+  /* Shape */
+  --radius-panel: 20px;
+  --radius-btn: 12px;
+
+  /* Shadows */
+  --shadow-board: 0 4px 20px rgba(0, 0, 0, 0.1);
+  --shadow-panel: 0 -4px 24px rgba(0, 0, 0, 0.12);
+
+  /* Motion */
+  --ease-fast: 120ms ease;
+  --ease-spring: 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── Reset ─────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  /* Prevent pull-to-refresh / bounce on mobile */
+  overscroll-behavior: none;
+}
+
+#root {
+  height: 100%;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ─── High-contrast theme ────────────────────────────────── */
+/* Applied via JS: document.documentElement.classList.toggle('high-contrast') */
+.high-contrast {
+  --color-bg: #000000;
+  --color-surface: #1a1a1a;
+  --color-text: #ffffff;
+  --color-text-secondary: #bbbbbb;
+  --color-border: #555555;
+  --color-border-box: #ffffff;
+  --color-given: #ffffff;
+  --color-input: #4fc3f7;
+  --color-note: #ce93d8;
+  --color-selected: #1a3a5c;
+  --color-related: #111111;
+  --color-same-value: #1a3a1a;
+  --color-highlighted: #3a3000;
+  --color-primary: #4fc3f7;
+  --color-primary-light: #0d2a3a;
+  --color-error: #ff6b6b;
+}

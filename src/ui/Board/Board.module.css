@@ -1,0 +1,27 @@
+/* Mobile-first: fill the available width, capped so board never overflows vertically */
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  /* Fit within the horizontal space, but never taller than available vertical space */
+  width: min(
+    calc(100vw - 24px),
+    calc(100svh - var(--header-height) - var(--numberpad-height) - var(--toolbar-height) - 24px)
+  );
+  aspect-ratio: 1 / 1;
+  border: 2.5px solid var(--color-border-box);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: var(--shadow-board);
+  margin: 0 auto;
+}
+
+/* Wider screens: cap at a comfortable max and keep it square */
+@media (min-width: 480px) {
+  .board {
+    width: min(
+      440px,
+      calc(100svh - var(--header-height) - var(--numberpad-height) - var(--toolbar-height) - 40px)
+    );
+  }
+}

@@ -1,0 +1,122 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 200;
+  animation: fadeIn 180ms ease forwards;
+}
+
+/* Bottom sheet — slides up from the bottom edge */
+.panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  padding: 10px 24px calc(32px + env(safe-area-inset-bottom, 0px));
+  z-index: 201;
+  box-shadow: var(--shadow-panel);
+  animation: slideUp var(--ease-spring) forwards;
+}
+
+/* On wider screens: float it as a card above the toolbar */
+@media (min-width: 520px) {
+  .panel {
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(480px, 94vw);
+    bottom: calc(var(--toolbar-height) + 12px);
+    border-radius: var(--radius-panel);
+    padding-bottom: 24px;
+  }
+}
+
+.handle {
+  width: 40px;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.techniqueLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.technique {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 14px;
+}
+
+.explanation {
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.action {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-bottom: 24px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.highlightBtn,
+.closeBtn {
+  flex: 1;
+  height: 52px;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  touch-action: manipulation;
+  outline: none;
+  transition: opacity var(--ease-fast), transform 80ms;
+}
+
+.highlightBtn:active,
+.closeBtn:active {
+  transform: scale(0.96);
+}
+
+.highlightBtn {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.closeBtn {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%) }
+  to   { transform: translateY(0) }
+}
+
+@media (min-width: 520px) {
+  @keyframes slideUp {
+    from { transform: translateX(-50%) translateY(24px); opacity: 0 }
+    to   { transform: translateX(-50%) translateY(0);    opacity: 1 }
+  }
+}

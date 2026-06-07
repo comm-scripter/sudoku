@@ -1,0 +1,205 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 200;
+  animation: fadeIn 180ms ease forwards;
+}
+
+.panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  padding: 10px 20px calc(28px + env(safe-area-inset-bottom, 0px));
+  z-index: 201;
+  box-shadow: var(--shadow-panel);
+  animation: slideUp var(--ease-spring) forwards;
+}
+
+@media (min-width: 520px) {
+  .panel {
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(480px, 94vw);
+    bottom: calc(var(--toolbar-height) + 12px);
+    border-radius: var(--radius-panel);
+    padding-bottom: 24px;
+  }
+}
+
+.handle {
+  width: 40px;
+  height: 4px;
+  background: var(--color-border);
+  border-radius: 2px;
+  margin: 0 auto 18px;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 18px;
+}
+
+/* ─── Sections ────────────────────────────────────────────── */
+.section {
+  margin-bottom: 20px;
+}
+
+.sectionLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.sectionHint {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+}
+
+/* ─── Segmented control (Difficulty) ─────────────────────── */
+.segmented {
+  display: flex;
+  gap: 6px;
+}
+
+.segment {
+  flex: 1;
+  height: 42px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  touch-action: manipulation;
+  outline: none;
+  transition: background var(--ease-fast), color var(--ease-fast), border-color var(--ease-fast);
+}
+
+.segmentActive {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+/* ─── Toggle rows ─────────────────────────────────────────── */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.toggleRow:last-child {
+  border-bottom: none;
+}
+
+.toggleText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.toggleLabel {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.toggleHint {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+/* Visually-hidden real checkbox */
+.toggleInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* CSS pill toggle */
+.toggle {
+  flex-shrink: 0;
+  width: 48px;
+  height: 28px;
+  background: var(--color-border);
+  border-radius: 14px;
+  position: relative;
+  transition: background 200ms ease;
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  transition: transform 200ms ease;
+}
+
+.toggleOn {
+  background: var(--color-primary);
+}
+
+.toggleOn::after {
+  transform: translateX(20px);
+}
+
+/* ─── Done button ─────────────────────────────────────────── */
+.closeBtn {
+  width: 100%;
+  height: 52px;
+  margin-top: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  touch-action: manipulation;
+  outline: none;
+  transition: opacity var(--ease-fast), transform 80ms;
+}
+
+.closeBtn:active { transform: scale(0.97); }
+
+/* ─── Animations ──────────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%) }
+  to   { transform: translateY(0) }
+}
+
+@media (min-width: 520px) {
+  @keyframes slideUp {
+    from { transform: translateX(-50%) translateY(20px); opacity: 0 }
+    to   { transform: translateX(-50%) translateY(0);    opacity: 1 }
+  }
+}

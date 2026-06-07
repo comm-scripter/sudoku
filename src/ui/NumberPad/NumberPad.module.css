@@ -1,0 +1,51 @@
+/* Mobile-first: 5-column grid (1–5 top row, 6–9 + erase bottom) */
+.pad {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 8px 12px;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.btn {
+  height: 52px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  touch-action: manipulation;
+  outline: none;
+  transition: background var(--ease-fast), transform 80ms;
+  user-select: none;
+}
+
+.btn:active { transform: scale(0.92); }
+
+/* Notes mode: show a tinted outline so users know which mode they're in */
+.noteMode {
+  background: var(--color-primary-light);
+  color: var(--color-note);
+  border-color: #c5b8f5;
+}
+
+.erase {
+  background: #fff0f0;
+  color: var(--color-error);
+  border-color: #ffd5d3;
+}
+
+.complete {
+  opacity: 0.3;
+  cursor: default;
+  transform: none !important;
+}
+
+@media (min-width: 480px) {
+  .pad { gap: 10px; padding: 10px 16px; }
+  .btn { height: 60px; font-size: 1.6rem; }
+}

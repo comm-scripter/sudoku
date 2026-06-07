@@ -1,0 +1,75 @@
+/* Bottom-anchored toolbar — flex item at the bottom of the screen column */
+.toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: var(--toolbar-height);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  /* Safe-area padding for devices with home indicator */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 56px;
+  min-height: 56px;
+  padding: 4px 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-btn);
+  touch-action: manipulation;
+  outline: none;
+  color: var(--color-text-secondary);
+  transition: color var(--ease-fast), background var(--ease-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.btn.active {
+  color: var(--color-primary);
+}
+
+.icon {
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Pro Tip button stands out: filled pill */
+.proTip {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: 16px;
+  min-width: 68px;
+  padding: 6px 8px;
+}
+
+.proTip .icon,
+.proTip .label {
+  color: #fff;
+}
+
+@media (min-width: 480px) {
+  .btn    { min-width: 64px; gap: 4px; }
+  .icon   { font-size: 1.6rem; }
+  .label  { font-size: 0.65rem; }
+  .proTip { min-width: 80px; }
+}

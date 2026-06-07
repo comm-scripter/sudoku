@@ -1,0 +1,64 @@
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-top-color: var(--color-border);
+  border-left-color: var(--color-border);
+  background: var(--color-surface);
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  touch-action: manipulation;
+  transition: background var(--ease-fast);
+  /* ensure cells stay square inside the CSS-grid board */
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Thick box borders */
+.boxBorderLeft { border-left: 2px solid var(--color-border-box); }
+.boxBorderTop  { border-top:  2px solid var(--color-border-box); }
+
+/* Value states */
+.given { color: var(--color-given);   font-weight: 700; }
+.input { color: var(--color-input);   font-weight: 500; }
+.error { color: var(--color-error);   background: #fff0f0; }
+
+/* Selection / highlight states */
+.selected    { background: var(--color-selected)   !important; }
+.related     { background: var(--color-related); }
+.sameValue   { background: var(--color-same-value); }
+.highlighted { background: var(--color-highlighted); }
+
+.value {
+  font-size: var(--font-cell);
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* 3×3 pencil-mark grid */
+.notes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 92%;
+  height: 92%;
+  pointer-events: none;
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-note);
+  color: var(--color-note);
+  font-weight: 600;
+  opacity: 0;
+  user-select: none;
+  line-height: 1;
+}
+
+.noteVisible { opacity: 1; }

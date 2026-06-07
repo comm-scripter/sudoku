@@ -1,0 +1,46 @@
+/* Mobile-first: single full-height column — no scrolling */
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;       /* svh = small viewport height — correct on mobile */
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--header-height);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 16px;
+}
+
+.title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  letter-spacing: -0.025em;
+}
+
+/* Board lives in this flex container — it fills remaining space */
+.main {
+  flex: 1;
+  min-height: 0;          /* critical: allows flex child to shrink below content size */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+}
+
+/* On larger screens, constrain the overall layout width */
+@media (min-width: 600px) {
+  .screen {
+    max-width: 520px;
+    margin: 0 auto;
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+  }
+}
