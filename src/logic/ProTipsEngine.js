@@ -6,19 +6,27 @@ import { detect as hiddenPairs }      from './techniques/hiddenPairs.js'
 import { detect as xWing }            from './techniques/xWing.js'
 import { detect as swordfish }        from './techniques/swordfish.js'
 import { detect as xyWing }           from './techniques/xyWing.js'
+import { detect as xyzWing }          from './techniques/xyzWing.js'
 import { detect as coloring }         from './techniques/coloring.js'
+import { detect as als }              from './techniques/als.js'
+import { detect as aic }              from './techniques/aic.js'
+import { detect as forcingChains }    from './techniques/forcingChains.js'
 
-// Priority order matches the spec — simpler techniques first.
+// Priority order: simpler / lower-difficulty techniques first.
 const TECHNIQUES = [
   nakedSingle,
   hiddenSingle,
-  lockedCandidates,
-  nakedPairs,
-  hiddenPairs,
+  lockedCandidates,   // Pointing Pairs, Pointing Triplets, Box-Line Reduction
+  nakedPairs,         // Naked Pairs + Naked Triplets
+  hiddenPairs,        // Hidden Pairs + Hidden Triplets
   xWing,
   swordfish,
   xyWing,
-  coloring,
+  xyzWing,
+  coloring,           // Simple Coloring
+  als,                // Almost Locked Sets (ALS-XZ)
+  aic,                // Alternating Inference Chains (X-Chain)
+  forcingChains,      // Forcing Chains (bifurcation)
 ]
 
 /**
