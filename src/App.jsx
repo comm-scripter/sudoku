@@ -21,6 +21,14 @@ export default function App() {
 
   const { settings, update: updateSetting } = useSettings()
 
+  const handleSettingUpdate = useCallback((key, value) => {
+    updateSetting(key, value)
+    if (key === 'difficulty' && history.length === 0) {
+      startNewGame(value)
+      setShowSettings(false)
+    }
+  }, [updateSetting, startNewGame, history.length])
+
   const completedDigits = useMemo(() => {
     if (!board) return new Set()
     const counts = new Array(10).fill(0)
@@ -121,7 +129,7 @@ export default function App() {
       {showSettings && (
         <SettingsPanel
           settings={settings}
-          onUpdate={updateSetting}
+          onUpdate={handleSettingUpdate}
           onClose={() => setShowSettings(false)}
           onEnterPuzzle={handleOpenSandbox}
         />
