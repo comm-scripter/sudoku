@@ -76,6 +76,7 @@
 }
 
 .highlightBtn,
+.nextTipBtn,
 .closeBtn {
   flex: 1;
   height: 52px;
@@ -90,6 +91,7 @@
 }
 
 .highlightBtn:active,
+.nextTipBtn:active,
 .closeBtn:active {
   transform: scale(0.96);
 }
@@ -97,6 +99,12 @@
 .highlightBtn {
   background: var(--color-primary-light);
   color: var(--color-primary);
+}
+
+.nextTipBtn {
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
 }
 
 .closeBtn {

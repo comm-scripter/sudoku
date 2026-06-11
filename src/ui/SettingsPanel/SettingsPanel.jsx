@@ -23,7 +23,7 @@ function ToggleRow({ label, hint, checked, onChange }) {
   )
 }
 
-export function SettingsPanel({ settings, onUpdate, onClose }) {
+export function SettingsPanel({ settings, onUpdate, onClose, onEnterPuzzle }) {
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handler)
@@ -75,6 +75,12 @@ export function SettingsPanel({ settings, onUpdate, onClose }) {
             onChange={v => onUpdate('highContrast', v)}
           />
         </section>
+
+        {onEnterPuzzle && (
+          <button className={styles.sandboxBtn} onClick={onEnterPuzzle}>
+            Enter Custom Puzzle
+          </button>
+        )}
 
         <button className={styles.closeBtn} onClick={onClose}>Done</button>
       </div>

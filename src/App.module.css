@@ -25,6 +25,21 @@
   letter-spacing: -0.025em;
 }
 
+.diffBadge {
+  margin-left: 10px;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.diff_easy   { background: #e6f7ec; color: #1a7f37; }
+.diff_medium { background: #fff8e1; color: #a06000; }
+.diff_hard   { background: #fff0f0; color: #c0392b; }
+.diff_custom { background: #eef2ff; color: #3730a3; }
+
 /* Board lives in this flex container — it fills remaining space */
 .main {
   flex: 1;

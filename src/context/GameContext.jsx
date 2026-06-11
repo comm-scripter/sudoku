@@ -15,7 +15,13 @@ export function GameProvider({ children }) {
     const puzzleStr = generatePuzzle(difficulty)
     const board = createBoard(puzzleStr)
     const solution = solve(board)
-    dispatch({ type: 'NEW_GAME', board, solution })
+    dispatch({ type: 'NEW_GAME', board, solution, difficulty })
+  }, [])
+
+  const loadCustomPuzzle = useCallback((puzzleStr) => {
+    const board = createBoard(puzzleStr)
+    const solution = solve(board)
+    dispatch({ type: 'NEW_GAME', board, solution, difficulty: 'custom' })
   }, [])
 
   const selectCell = useCallback((row, col) => {
@@ -58,6 +64,22 @@ export function GameProvider({ children }) {
     })
   }, [state.board])
 
+  const requestNextProTip = useCallback(() => {
+    if (!state.board) return
+    const nextIndex = state.proTip?._tipIndex != null ? state.proTip._tipIndex + 1 : 0
+    const tip = getProTip(state.board, nextIndex)
+    dispatch({
+      type: 'SHOW_PRO_TIP',
+      tip: tip ?? {
+        technique: 'No More Tips',
+        cellsInvolved: [],
+        affectedDigits: [],
+        explanation: 'No further techniques were found for the current board state.',
+        recommendedAction: 'Try applying the tips you\'ve already seen, or keep solving!',
+      },
+    })
+  }, [state.board, state.proTip])
+
   const hideProTip = useCallback(() => dispatch({ type: 'HIDE_PRO_TIP' }), [])
 
   const highlightTip = useCallback((tip) => {
@@ -68,6 +90,7 @@ export function GameProvider({ children }) {
     <GameContext.Provider value={{
       ...state,
       startNewGame,
+      loadCustomPuzzle,
       selectCell,
       inputDigit,
       eraseCell,
@@ -75,6 +98,7 @@ export function GameProvider({ children }) {
       redo,
       toggleNotesMode,
       requestProTip,
+      requestNextProTip,
       hideProTip,
       highlightTip,
     }}>

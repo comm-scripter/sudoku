@@ -7,6 +7,7 @@ const MAX_HISTORY = 100
 export const initialState = {
   board: null,
   solution: null,
+  difficulty: null,   // 'easy' | 'medium' | 'hard' | 'custom'
   selectedRow: null,
   selectedCol: null,
   notesMode: false,
@@ -25,6 +26,7 @@ export function gameReducer(state, action) {
         ...initialState,
         board: action.board,
         solution: action.solution,
+        difficulty: action.difficulty ?? null,
       }
 
     case 'SELECT_CELL':
@@ -51,12 +53,17 @@ export function gameReducer(state, action) {
         isError: false,
       })
 
-      // Mark conflict if the placed digit clashes with a peer
-      if (action.highlightErrors && nextValue !== EMPTY && !isCellValid(nextBoard, row, col)) {
-        nextBoard = setCell(nextBoard, row, col, {
-          ...getCell(nextBoard, row, col),
-          isError: true,
-        })
+      // Mark conflict if the placed digit clashes with a peer OR contradicts the known solution
+      if (action.highlightErrors && nextValue !== EMPTY) {
+        const peerConflict = !isCellValid(nextBoard, row, col)
+        const solutionMismatch = state.solution != null &&
+          nextValue !== state.solution.cells[row * 9 + col].value
+        if (peerConflict || solutionMismatch) {
+          nextBoard = setCell(nextBoard, row, col, {
+            ...getCell(nextBoard, row, col),
+            isError: true,
+          })
+        }
       }
 
       // Always remove the placed digit from every peer's pencil marks in one pass.

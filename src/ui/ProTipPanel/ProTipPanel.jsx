@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import styles from './ProTipPanel.module.css'
 
-export function ProTipPanel({ tip, onClose, onHighlight }) {
+export function ProTipPanel({ tip, onClose, onHighlight, onNextTip }) {
   // Close on Escape key
   useEffect(() => {
     if (!tip) return
@@ -13,6 +13,7 @@ export function ProTipPanel({ tip, onClose, onHighlight }) {
   if (!tip) return null
 
   const hasHighlight = tip.cellsInvolved?.length > 0
+  const hasNextTip = tip._tipIndex != null
 
   return (
     <>
@@ -38,6 +39,11 @@ export function ProTipPanel({ tip, onClose, onHighlight }) {
               onClick={() => onHighlight(tip)}
             >
               Highlight Cells
+            </button>
+          )}
+          {hasNextTip && (
+            <button className={styles.nextTipBtn} onClick={onNextTip}>
+              Next Tip
             </button>
           )}
           <button className={styles.closeBtn} onClick={onClose}>
