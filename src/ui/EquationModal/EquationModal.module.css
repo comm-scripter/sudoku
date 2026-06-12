@@ -1,0 +1,227 @@
+/* ─── Overlay ───────────────────────────────────────────── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 180ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+
+/* ─── Modal card ────────────────────────────────────────── */
+.modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-panel);
+  padding: 28px 24px 24px;
+  width: 100%;
+  max-width: 340px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  animation: popIn var(--ease-spring) both;
+  transform-origin: center bottom;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.72) translateY(20px) }
+  to   { opacity: 1; transform: scale(1)    translateY(0)    }
+}
+
+/* ─── Shake animation (wrong answer) ───────────────────── */
+@keyframes shake {
+  0%   { transform: translateX(0) }
+  15%  { transform: translateX(-8px) }
+  35%  { transform: translateX(8px) }
+  55%  { transform: translateX(-6px) }
+  75%  { transform: translateX(6px) }
+  90%  { transform: translateX(-3px) }
+  100% { transform: translateX(0) }
+}
+
+.shake {
+  animation: shake 480ms ease;
+}
+
+/* ─── Success state ─────────────────────────────────────── */
+@keyframes successPulse {
+  0%   { background: var(--color-surface) }
+  40%  { background: #d4f5e4 }
+  100% { background: var(--color-surface) }
+}
+
+.success {
+  animation: successPulse 650ms ease forwards;
+}
+
+.success .submitBtn {
+  background: #22c55e !important;
+  color: #fff !important;
+}
+
+/* ─── Subtitle ──────────────────────────────────────────── */
+.subtitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ─── Equation display ──────────────────────────────────── */
+.equationBox {
+  background: var(--color-equation-bg, #f0e6ff);
+  border-radius: 12px;
+  padding: 18px 24px;
+  width: 100%;
+  text-align: center;
+  border: 1.5px solid var(--color-equation-border, #d8c0f0);
+}
+
+.equationText {
+  font-family: 'Courier New', 'Menlo', monospace;
+  font-size: clamp(1.2rem, 5vw, 1.7rem);
+  font-weight: 700;
+  color: var(--color-equation-text, #5c35a0);
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+/* ─── Input row ─────────────────────────────────────────── */
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.xLabel {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text);
+  font-family: 'Courier New', monospace;
+}
+
+.input {
+  width: 72px;
+  height: 56px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 120ms ease;
+  -moz-appearance: textfield;
+}
+
+.input::-webkit-inner-spin-button,
+.input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+/* ─── Digit keypad ──────────────────────────────────────── */
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.keypadBtn {
+  height: 48px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 100ms ease, border-color 100ms ease;
+  touch-action: manipulation;
+}
+
+.keypadBtn:hover {
+  background: var(--color-related);
+}
+
+.keypadBtn:active {
+  background: var(--color-primary-light);
+}
+
+.keypadBtnActive {
+  background: var(--color-primary-light) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary);
+}
+
+/* ─── Action buttons ────────────────────────────────────── */
+.actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.cancelBtn,
+.submitBtn {
+  flex: 1;
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  transition: opacity 120ms ease, background 120ms ease;
+  touch-action: manipulation;
+}
+
+.cancelBtn {
+  background: transparent;
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.cancelBtn:hover {
+  background: var(--color-related);
+}
+
+.submitBtn {
+  background: var(--color-primary);
+  border: none;
+  color: #fff;
+}
+
+.submitBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.submitBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─── High-contrast overrides ───────────────────────────── */
+.high-contrast .equationBox {
+  background: #1a0a2e;
+  border-color: #6b46c1;
+}
+
+.high-contrast .equationText {
+  color: #d4b3ff;
+}

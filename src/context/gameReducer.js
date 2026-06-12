@@ -138,6 +138,15 @@ export function gameReducer(state, action) {
       }
     }
 
+    case 'SOLVE_EQUATION': {
+      const { row, col } = action
+      const idx = row * 9 + col
+      const nextCells = state.board.cells.map((cell, i) =>
+        i === idx ? { ...cell, equationSolved: true } : cell
+      )
+      return { ...state, board: { cells: nextCells } }
+    }
+
     case 'SHOW_PRO_TIP':
       return { ...state, proTip: action.tip }
 

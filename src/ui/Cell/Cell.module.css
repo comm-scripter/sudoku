@@ -62,3 +62,23 @@
 }
 
 .noteVisible { opacity: 1; }
+
+/* ─── Algebra mode — unsolved equation cell ─────────────── */
+.unsolved {
+  background: var(--color-equation-bg, #f0e6ff) !important;
+  cursor: pointer;
+}
+
+.equation {
+  font-family: 'Courier New', 'Menlo', monospace;
+  font-size: clamp(0.3rem, 1.15vw, 0.48rem);
+  font-weight: 700;
+  color: var(--color-equation-text, #5c35a0);
+  text-align: center;
+  line-height: 1.15;
+  word-break: break-all;
+  padding: 1px 2px;
+  pointer-events: none;
+  user-select: none;
+  white-space: pre-wrap;
+}

@@ -63,6 +63,12 @@ export function SettingsPanel({ settings, onUpdate, onClose, onEnterPuzzle }) {
         {/* Toggles */}
         <section className={styles.section}>
           <ToggleRow
+            label="Algebra Opening"
+            hint="Solve equations to unlock the puzzle"
+            checked={settings.algebraMode}
+            onChange={v => onUpdate('algebraMode', v)}
+          />
+          <ToggleRow
             label="Highlight Errors"
             hint="Show conflicts in red as you fill"
             checked={settings.highlightErrors}

@@ -2,9 +2,14 @@ import styles from './NumberPad.module.css'
 
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-export function NumberPad({ onDigit, onErase, notesMode, completedDigits = new Set() }) {
+export function NumberPad({ onDigit, onErase, notesMode, completedDigits = new Set(), disabled = false }) {
   return (
-    <div className={styles.pad} role="group" aria-label="Number input">
+    <div
+      className={`${styles.pad} ${disabled ? styles.padDisabled : ''}`}
+      role="group"
+      aria-label="Number input"
+      aria-disabled={disabled}
+    >
       {DIGITS.map(d => {
         const done = completedDigits.has(d)
         return (

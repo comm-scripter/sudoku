@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState, useMemo } from 'react'
+import { useEffect, useCallback, useState, useMemo, useRef } from 'react'
 import { useGame } from './context/GameContext.jsx'
 import { useSettings } from './hooks/useSettings.js'
 import { Board } from './ui/Board/Board.jsx'
@@ -9,6 +9,7 @@ import { NewGameModal } from './ui/NewGameModal/NewGameModal.jsx'
 import { SettingsPanel } from './ui/SettingsPanel/SettingsPanel.jsx'
 import { SandboxModal } from './ui/SandboxModal/SandboxModal.jsx'
 import { WinModal } from './ui/WinModal/WinModal.jsx'
+import { EquationModal } from './ui/EquationModal/EquationModal.jsx'
 import styles from './App.module.css'
 
 export default function App() {
@@ -17,17 +18,76 @@ export default function App() {
     notesMode, proTip, history, highlightedCells, isComplete,
     startNewGame, loadCustomPuzzle, selectCell, inputDigit, eraseCell,
     undo, toggleNotesMode, requestProTip, requestNextProTip, hideProTip, highlightTip,
+    solveEquation,
   } = useGame()
 
   const { settings, update: updateSetting } = useSettings()
 
+  // ─── Equation phase ────────────────────────────────────────
+  const { totalEquations, solvedEquations, allEquationsSolved } = useMemo(() => {
+    if (!board) return { totalEquations: 0, solvedEquations: 0, allEquationsSolved: true }
+    let total = 0, solved = 0
+    for (const c of board.cells) {
+      if (c.equation != null) {
+        total++
+        if (c.equationSolved) solved++
+      }
+    }
+    return { totalEquations: total, solvedEquations: solved, allEquationsSolved: solved === total }
+  }, [board])
+
+  const [equationCell, setEquationCell] = useState(null) // { row, col } | null
+
+  // Flash "Puzzle Unlocked!" the moment all equations are cleared
+  const [unlockedFlash, setUnlockedFlash] = useState(false)
+  const prevSolvedRef = useRef(true) // start true so first mount doesn't fire
+
+  useEffect(() => {
+    if (allEquationsSolved && !prevSolvedRef.current && totalEquations > 0) {
+      prevSolvedRef.current = true
+      setUnlockedFlash(true)
+      const t = setTimeout(() => setUnlockedFlash(false), 2400)
+      return () => clearTimeout(t)
+    }
+    prevSolvedRef.current = allEquationsSolved
+  }, [allEquationsSolved, totalEquations])
+
+  // Intercept cell clicks: equation cells open the modal; other cells blocked in equation phase
+  const handleCellClick = useCallback((row, col) => {
+    if (!board) return
+    const cell = board.cells[row * 9 + col]
+    if (!allEquationsSolved) {
+      if (cell.isGiven && cell.equation != null && !cell.equationSolved) {
+        setEquationCell({ row, col })
+      }
+      return
+    }
+    selectCell(row, col)
+  }, [board, allEquationsSolved, selectCell])
+
+  const handleEquationSolve = useCallback(() => {
+    if (!equationCell) return
+    solveEquation(equationCell.row, equationCell.col)
+    setEquationCell(null)
+  }, [equationCell, solveEquation])
+
+  // ─── Settings / game helpers ────────────────────────────────
+  const opts = useCallback(
+    (overrides = {}) => ({ algebraMode: settings.algebraMode, ...overrides }),
+    [settings.algebraMode]
+  )
+
   const handleSettingUpdate = useCallback((key, value) => {
     updateSetting(key, value)
-    if (key === 'difficulty' && history.length === 0) {
-      startNewGame(value)
+    if (key === 'difficulty' && history.length === 0 && solvedEquations === 0) {
+      startNewGame(value, opts())
       setShowSettings(false)
     }
-  }, [updateSetting, startNewGame, history.length])
+    // Algebra toggle: restart immediately if no Sudoku moves yet
+    if (key === 'algebraMode' && history.length === 0) {
+      startNewGame(settings.difficulty, opts({ algebraMode: value }))
+    }
+  }, [updateSetting, startNewGame, opts, history.length, solvedEquations, settings.difficulty])
 
   const completedDigits = useMemo(() => {
     if (!board) return new Set()
@@ -40,21 +100,20 @@ export default function App() {
   const [showSettings, setShowSettings]           = useState(false)
   const [showSandbox, setShowSandbox]             = useState(false)
 
-  // Start a game on first mount using the saved difficulty
-  useEffect(() => { startNewGame(settings.difficulty) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { startNewGame(settings.difficulty, opts()) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleHomePress = useCallback(() => {
     if (history.length > 0) {
       setConfirmingNewGame(true)
     } else {
-      startNewGame(settings.difficulty)
+      startNewGame(settings.difficulty, opts())
     }
-  }, [history.length, startNewGame, settings.difficulty])
+  }, [history.length, startNewGame, opts, settings.difficulty])
 
   const handleConfirmNewGame = useCallback(() => {
     setConfirmingNewGame(false)
-    startNewGame(settings.difficulty)
-  }, [startNewGame, settings.difficulty])
+    startNewGame(settings.difficulty, opts())
+  }, [startNewGame, opts, settings.difficulty])
 
   const handleOpenSandbox = useCallback(() => {
     setShowSettings(false)
@@ -63,33 +122,41 @@ export default function App() {
 
   const handleLoadCustom = useCallback((puzzleStr) => {
     setShowSandbox(false)
-    loadCustomPuzzle(puzzleStr)
-  }, [loadCustomPuzzle])
+    loadCustomPuzzle(puzzleStr, opts())
+  }, [loadCustomPuzzle, opts])
 
-  // Keyboard shortcuts — suppressed while any modal is open
-  const anyModalOpen = confirmingNewGame || showSettings || !!proTip || showSandbox
+  const anyModalOpen = confirmingNewGame || showSettings || !!proTip || showSandbox || !!equationCell
   const handleKeyDown = useCallback((e) => {
     if (anyModalOpen) return
+    if (!allEquationsSolved) return
     if (e.key >= '1' && e.key <= '9') { inputDigit(Number(e.key), settings); return }
     if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { eraseCell(); return }
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); return }
     if (e.key === 'n' || e.key === 'N') { toggleNotesMode(); return }
-  }, [anyModalOpen, inputDigit, eraseCell, undo, toggleNotesMode, settings])
+  }, [anyModalOpen, allEquationsSolved, inputDigit, eraseCell, undo, toggleNotesMode, settings])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
+  const equationCellData = equationCell
+    ? board?.cells[equationCell.row * 9 + equationCell.col]
+    : null
+
   return (
     <div className={styles.screen}>
       <header className={styles.header}>
         <h1 className={styles.title}>Sudoku</h1>
-        {difficulty && (
+        {!allEquationsSolved && board ? (
+          <span className={styles.equationBadge}>
+            {solvedEquations}/{totalEquations} equations
+          </span>
+        ) : difficulty ? (
           <span className={`${styles.diffBadge} ${styles[`diff_${difficulty}`]}`}>
             {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
           </span>
-        )}
+        ) : null}
       </header>
 
       <main className={styles.main}>
@@ -98,7 +165,7 @@ export default function App() {
           selectedRow={selectedRow}
           selectedCol={selectedCol}
           highlightedCells={highlightedCells}
-          onCellSelect={selectCell}
+          onCellSelect={handleCellClick}
         />
       </main>
 
@@ -107,16 +174,17 @@ export default function App() {
         onErase={eraseCell}
         notesMode={notesMode}
         completedDigits={completedDigits}
+        disabled={!allEquationsSolved}
       />
 
       <Toolbar
         onHome={handleHomePress}
-        onUndo={undo}
-        onNotes={toggleNotesMode}
-        onProTip={requestProTip}
+        onUndo={allEquationsSolved ? undo : undefined}
+        onNotes={allEquationsSolved ? toggleNotesMode : undefined}
+        onProTip={allEquationsSolved ? requestProTip : undefined}
         onSettings={() => setShowSettings(true)}
         notesMode={notesMode}
-        canUndo={history.length > 0}
+        canUndo={allEquationsSolved && history.length > 0}
       />
 
       <ProTipPanel
@@ -147,6 +215,21 @@ export default function App() {
           onLoad={handleLoadCustom}
           onCancel={() => setShowSandbox(false)}
         />
+      )}
+
+      {equationCell && equationCellData && (
+        <EquationModal
+          equation={equationCellData.equation}
+          solution={equationCellData.value}
+          onSolve={handleEquationSolve}
+          onClose={() => setEquationCell(null)}
+        />
+      )}
+
+      {unlockedFlash && (
+        <div className={styles.unlockedToast} role="status" aria-live="polite">
+          Puzzle Unlocked! Now solve the Sudoku.
+        </div>
       )}
 
       {isComplete && (

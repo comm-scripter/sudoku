@@ -4,6 +4,7 @@ const DEFAULTS = {
   difficulty: 'easy',
   highlightErrors: true,
   highContrast: false,
+  algebraMode: true,
 }
 
 function load() {

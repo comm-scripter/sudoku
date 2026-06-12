@@ -5,23 +5,39 @@ import { generatePuzzle } from '../logic/PuzzleGenerator.js'
 import { solve } from '../logic/PuzzleSolver.js'
 import { getProTip } from '../logic/ProTipsEngine.js'
 import { EMPTY } from '../logic/CellModel.js'
+import { generateEquation } from '../logic/EquationGenerator.js'
+
+function addEquationsToBoard(board) {
+  return {
+    cells: board.cells.map(cell =>
+      cell.isGiven
+        ? { ...cell, equation: generateEquation(cell.value), equationSolved: false }
+        : cell
+    ),
+  }
+}
 
 const GameContext = createContext(null)
 
 export function GameProvider({ children }) {
   const [state, dispatch] = useReducer(gameReducer, initialState)
 
-  const startNewGame = useCallback((difficulty = 'easy') => {
-    const puzzleStr = generatePuzzle(difficulty)
-    const board = createBoard(puzzleStr)
+  const startNewGame = useCallback((difficulty = 'easy', { algebraMode = true } = {}) => {
+    const raw = createBoard(generatePuzzle(difficulty))
+    const board = algebraMode ? addEquationsToBoard(raw) : raw
     const solution = solve(board)
     dispatch({ type: 'NEW_GAME', board, solution, difficulty })
   }, [])
 
-  const loadCustomPuzzle = useCallback((puzzleStr) => {
-    const board = createBoard(puzzleStr)
+  const loadCustomPuzzle = useCallback((puzzleStr, { algebraMode = true } = {}) => {
+    const raw = createBoard(puzzleStr)
+    const board = algebraMode ? addEquationsToBoard(raw) : raw
     const solution = solve(board)
     dispatch({ type: 'NEW_GAME', board, solution, difficulty: 'custom' })
+  }, [])
+
+  const solveEquation = useCallback((row, col) => {
+    dispatch({ type: 'SOLVE_EQUATION', row, col })
   }, [])
 
   const selectCell = useCallback((row, col) => {
@@ -101,6 +117,7 @@ export function GameProvider({ children }) {
       requestNextProTip,
       hideProTip,
       highlightTip,
+      solveEquation,
     }}>
       {children}
     </GameContext.Provider>
