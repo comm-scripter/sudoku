@@ -175,18 +175,22 @@ export default function App() {
   return (
     <div className={styles.screen}>
       <header className={styles.header}>
-        <HamburgerMenu />
+        <div className={styles.headerLeft}>
+          <HamburgerMenu />
+          {!allEquationsSolved && board && (
+            <span className={styles.equationBadge}>
+              <span className={styles.equationCount}>{solvedEquations}/{totalEquations}</span>
+              <span className={styles.equationWord}>equations</span>
+            </span>
+          )}
+        </div>
         <h1 className={styles.title}>Sudoku</h1>
         <div className={styles.headerRight}>
-          {!allEquationsSolved && board ? (
-            <span className={styles.equationBadge}>
-              {solvedEquations}/{totalEquations} equations
-            </span>
-          ) : difficulty ? (
+          {difficulty && (
             <span className={`${styles.diffBadge} ${styles[`diff_${difficulty}`]}`}>
               {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
             </span>
-          ) : null}
+          )}
           <span className={styles.timer}>{formatTime(elapsed)}</span>
         </div>
       </header>
