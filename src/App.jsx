@@ -10,6 +10,7 @@ import { SettingsPanel } from './ui/SettingsPanel/SettingsPanel.jsx'
 import { SandboxModal } from './ui/SandboxModal/SandboxModal.jsx'
 import { WinModal } from './ui/WinModal/WinModal.jsx'
 import { EquationModal } from './ui/EquationModal/EquationModal.jsx'
+import { HamburgerMenu } from './ui/HamburgerMenu/HamburgerMenu.jsx'
 import styles from './App.module.css'
 
 export default function App() {
@@ -22,6 +23,24 @@ export default function App() {
   } = useGame()
 
   const { settings, update: updateSetting } = useSettings()
+
+  // ─── Game timer ────────────────────────────────────────────
+  const timerRef = useRef(Date.now())
+  const [elapsed, setElapsed] = useState(0)
+  const resetTimer = useCallback(() => {
+    timerRef.current = Date.now()
+    setElapsed(0)
+  }, [])
+  const formatTime = (s) =>
+    `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
+
+  useEffect(() => {
+    if (isComplete) return
+    const id = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - timerRef.current) / 1000))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [isComplete])
 
   // ─── Equation phase ────────────────────────────────────────
   const { totalEquations, solvedEquations, allEquationsSolved } = useMemo(() => {
@@ -80,13 +99,15 @@ export default function App() {
   const handleSettingUpdate = useCallback((key, value) => {
     updateSetting(key, value)
     if (key === 'difficulty' && history.length === 0 && solvedEquations === 0) {
+      resetTimer()
       startNewGame(value, opts())
     }
     // Algebra toggle: restart immediately if no Sudoku moves yet
     if (key === 'algebraMode' && history.length === 0) {
+      resetTimer()
       startNewGame(settings.difficulty, opts({ algebraMode: value }))
     }
-  }, [updateSetting, startNewGame, opts, history.length, solvedEquations, settings.difficulty])
+  }, [updateSetting, startNewGame, opts, history.length, solvedEquations, settings.difficulty, resetTimer])
 
   const completedDigits = useMemo(() => {
     if (!board) return new Set()
@@ -105,14 +126,16 @@ export default function App() {
     if (history.length > 0) {
       setConfirmingNewGame(true)
     } else {
+      resetTimer()
       startNewGame(settings.difficulty, opts())
     }
-  }, [history.length, startNewGame, opts, settings.difficulty])
+  }, [history.length, startNewGame, opts, settings.difficulty, resetTimer])
 
   const handleConfirmNewGame = useCallback(() => {
     setConfirmingNewGame(false)
+    resetTimer()
     startNewGame(settings.difficulty, opts())
-  }, [startNewGame, opts, settings.difficulty])
+  }, [startNewGame, opts, settings.difficulty, resetTimer])
 
   const handleOpenSandbox = useCallback(() => {
     setShowSettings(false)
@@ -121,8 +144,14 @@ export default function App() {
 
   const handleLoadCustom = useCallback((puzzleStr) => {
     setShowSandbox(false)
+    resetTimer()
     loadCustomPuzzle(puzzleStr, opts())
-  }, [loadCustomPuzzle, opts])
+  }, [loadCustomPuzzle, opts, resetTimer])
+
+  const handlePlayAgain = useCallback(() => {
+    resetTimer()
+    startNewGame(settings.difficulty)
+  }, [resetTimer, startNewGame, settings.difficulty])
 
   const anyModalOpen = confirmingNewGame || showSettings || !!proTip || showSandbox || !!equationCell
   const handleKeyDown = useCallback((e) => {
@@ -146,16 +175,20 @@ export default function App() {
   return (
     <div className={styles.screen}>
       <header className={styles.header}>
+        <HamburgerMenu />
         <h1 className={styles.title}>Sudoku</h1>
-        {!allEquationsSolved && board ? (
-          <span className={styles.equationBadge}>
-            {solvedEquations}/{totalEquations} equations
-          </span>
-        ) : difficulty ? (
-          <span className={`${styles.diffBadge} ${styles[`diff_${difficulty}`]}`}>
-            {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
-          </span>
-        ) : null}
+        <div className={styles.headerRight}>
+          {!allEquationsSolved && board ? (
+            <span className={styles.equationBadge}>
+              {solvedEquations}/{totalEquations} equations
+            </span>
+          ) : difficulty ? (
+            <span className={`${styles.diffBadge} ${styles[`diff_${difficulty}`]}`}>
+              {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+            </span>
+          ) : null}
+          <span className={styles.timer}>{formatTime(elapsed)}</span>
+        </div>
       </header>
 
       <main className={styles.main}>
@@ -232,7 +265,7 @@ export default function App() {
       )}
 
       {isComplete && (
-        <WinModal onPlayAgain={() => startNewGame(settings.difficulty)} />
+        <WinModal onPlayAgain={handlePlayAgain} elapsed={elapsed} difficulty={difficulty} />
       )}
     </div>
   )

@@ -38,9 +38,55 @@
 .desc {
   font-size: 1rem;
   color: var(--color-text-secondary);
-  margin-bottom: 28px;
+  margin-bottom: 20px;
   line-height: 1.5;
 }
+
+.stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  background: var(--color-bg);
+  border-radius: var(--radius-btn);
+  padding: 14px 0;
+  margin-bottom: 24px;
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.statDivider {
+  width: 1px;
+  height: 36px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
+
+.statValue {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.statLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.points_easy   { color: #1a7f37; }
+.points_medium { color: #a06000; }
+.points_hard   { color: var(--color-primary); }
 
 .btn {
   width: 100%;

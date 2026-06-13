@@ -9,24 +9,42 @@
 
 .header {
   flex-shrink: 0;
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   height: var(--header-height);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   padding: 0 16px;
 }
 
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timer {
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary, #888);
+  letter-spacing: 0.03em;
+}
+
 .title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 1.2rem;
   font-weight: 800;
   color: var(--color-primary);
   letter-spacing: -0.025em;
+  white-space: nowrap;
 }
 
 .diffBadge {
-  margin-left: 10px;
   padding: 2px 9px;
   border-radius: 20px;
   font-size: 0.72rem;
@@ -52,7 +70,6 @@
 
 /* ─── Equation progress badge ───────────────────────────── */
 .equationBadge {
-  margin-left: 10px;
   padding: 2px 9px;
   border-radius: 20px;
   font-size: 0.72rem;
