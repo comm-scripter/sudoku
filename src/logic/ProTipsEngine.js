@@ -30,13 +30,14 @@ const TECHNIQUES = [
 ]
 
 /**
- * Returns the highest-priority applicable tip for the current board,
- * or null if no technique is detected.
+ * Returns the first applicable tip starting at `startIndex` in the technique list,
+ * or null if no technique is detected. The returned tip includes `_tipIndex` so
+ * callers can request the next tip by passing `_tipIndex + 1`.
  */
-export function getProTip(board) {
-  for (const detect of TECHNIQUES) {
-    const result = detect(board)
-    if (result) return result
+export function getProTip(board, startIndex = 0) {
+  for (let i = startIndex; i < TECHNIQUES.length; i++) {
+    const result = TECHNIQUES[i](board)
+    if (result) return { ...result, _tipIndex: i }
   }
   return null
 }
