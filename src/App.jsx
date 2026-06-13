@@ -81,7 +81,6 @@ export default function App() {
     updateSetting(key, value)
     if (key === 'difficulty' && history.length === 0 && solvedEquations === 0) {
       startNewGame(value, opts())
-      setShowSettings(false)
     }
     // Algebra toggle: restart immediately if no Sudoku moves yet
     if (key === 'algebraMode' && history.length === 0) {
