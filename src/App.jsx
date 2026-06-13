@@ -1,6 +1,8 @@
 import { useEffect, useCallback, useState, useMemo, useRef } from 'react'
 import { useGame } from './context/GameContext.jsx'
 import { useSettings } from './hooks/useSettings.js'
+import { useRecords } from './hooks/useRecords.js'
+import { calcScore } from './logic/scoring.js'
 import { Board } from './ui/Board/Board.jsx'
 import { NumberPad } from './ui/NumberPad/NumberPad.jsx'
 import { Toolbar } from './ui/Toolbar/Toolbar.jsx'
@@ -23,6 +25,7 @@ export default function App() {
   } = useGame()
 
   const { settings, update: updateSetting } = useSettings()
+  const { submitResult } = useRecords()
 
   // ─── Game timer ────────────────────────────────────────────
   const timerRef = useRef(Date.now())
@@ -119,6 +122,14 @@ export default function App() {
   const [confirmingNewGame, setConfirmingNewGame] = useState(false)
   const [showSettings, setShowSettings]           = useState(false)
   const [showSandbox, setShowSandbox]             = useState(false)
+  const [winStats, setWinStats]                   = useState(null)
+
+  useEffect(() => {
+    if (!isComplete) return
+    const score = calcScore(difficulty, elapsed)
+    const result = submitResult(difficulty, elapsed, score)
+    setWinStats({ score, ...result })
+  }, [isComplete]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { startNewGame(settings.difficulty, opts()) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -268,8 +279,17 @@ export default function App() {
         </div>
       )}
 
-      {isComplete && (
-        <WinModal onPlayAgain={handlePlayAgain} elapsed={elapsed} difficulty={difficulty} />
+      {isComplete && winStats && (
+        <WinModal
+          onPlayAgain={handlePlayAgain}
+          elapsed={elapsed}
+          difficulty={difficulty}
+          score={winStats.score}
+          isNewBestTime={winStats.isNewBestTime}
+          isNewHighScore={winStats.isNewHighScore}
+          bestTime={winStats.bestTime}
+          highScore={winStats.highScore}
+        />
       )}
     </div>
   )
