@@ -2,9 +2,11 @@ function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b) }
+
 /**
  * Returns an algebraic equation string whose unique solution is exactly n (1–9).
- * Picks randomly from 14 templates across linear, multiplicative, and expression forms.
+ * Picks randomly from 21 templates across linear, multiplicative, and expression forms.
  */
 export function generateEquation(n) {
   const TEMPLATES = [
@@ -46,17 +48,19 @@ export function generateEquation(n) {
       return `2(x + ${b}) = ${2 * (n + b)}`
     },
 
-    // 7. x = a + b  where a+b = n  (n≥2; else fallback)
+    // 7. ax + bx = (a+b)n  — combining like terms
     () => {
-      if (n < 2) return `x + 1 = ${n + 1}`
-      const a = randInt(1, n - 1)
-      return `x = ${a} + ${n - a}`
+      const a = randInt(2, 5)
+      const b = randInt(1, 4)
+      return `${a}x + ${b}x = ${(a + b) * n}`
     },
 
-    // 8. x = c - b  where c-b = n
+    // 8. (x + a) / b = c  — division after offset (a=0 gives plain x/b = c)
     () => {
-      const b = randInt(1, 8)
-      return `x = ${n + b} - ${b}`
+      const b = randInt(2, 4)
+      const a = (b - (n % b)) % b
+      const c = (n + a) / b
+      return a === 0 ? `x / ${b} = ${c}` : `(x + ${a}) / ${b} = ${c}`
     },
 
     // 9. x ÷ a = c  OR  (x + b) ÷ a = c  with (n+b) % a === 0
@@ -82,10 +86,12 @@ export function generateEquation(n) {
       return `x - ${b} = ${n - b}`
     },
 
-    // 12. x = (a·n) ÷ a  — presented as a division expression
+    // 12. a(x - b) = c  — distributive with subtraction (n≥2; else simple fallback)
     () => {
       const a = randInt(2, 4)
-      return `x = ${a * n} ÷ ${a}`
+      if (n <= 1) return `${a}x + 1 = ${a * n + 1}`
+      const b = randInt(1, n - 1)
+      return `${a}(x - ${b}) = ${a * (n - b)}`
     },
 
     // 13. (a·b)x ÷ b = a·n  (simplifies cleanly)
@@ -95,22 +101,72 @@ export function generateEquation(n) {
       return `${b * k}x ÷ ${b} = ${k * n}`
     },
 
-    // 14. x = a × b  where a·b = n  (only for composite n; else fallback)
+    // 14. bx - ax = (b-a)n  — combining like terms (difference)
     () => {
-      if (n < 4) {
-        const b = randInt(1, 8)
-        return `x = ${n + b} - ${b}`
+      const a = randInt(2, 4)
+      const b = a + randInt(1, 3)
+      return `${b}x - ${a}x = ${(b - a) * n}`
+    },
+
+    // 15. x/a = b/c  — cross-multiply (b/c is n/a in fully reduced form, c > 1)
+    () => {
+      const candidates = [2, 3, 4, 6].filter(a => gcd(n, a) < a)
+      if (candidates.length === 0) {
+        const b = randInt(1, 6)
+        return `2x + ${b} = ${2 * n + b}`
       }
-      const factors = []
-      for (let f = 2; f * f <= n; f++) {
-        if (n % f === 0) factors.push([f, n / f])
+      const a = candidates[Math.floor(Math.random() * candidates.length)]
+      const g = gcd(n, a)
+      return `x / ${a} = ${n / g} / ${a / g}`
+    },
+
+    // 16. x² = n²  — perfect square (x is 1–9 so solution is unambiguous)
+    () => `x² = ${n * n}`,
+
+    // 17. a(bx ± c) = d  — nested parentheses, expand then isolate
+    () => {
+      const a = randInt(2, 3)
+      const b = randInt(2, 4)
+      if (n > 1 && Math.random() < 0.5) {
+        const c = randInt(1, Math.min(4, b * n - 1))
+        return `${a}(${b}x - ${c}) = ${a * (b * n - c)}`
       }
-      if (factors.length === 0) {
-        const b = randInt(1, 8)
-        return `x = ${n + b} - ${b}`
-      }
-      const [a, c] = factors[Math.floor(Math.random() * factors.length)]
-      return `x = ${a} × ${c}`
+      const c = randInt(1, 5)
+      return `${a}(${b}x + ${c}) = ${a * (b * n + c)}`
+    },
+
+    // 18. ax + b = (a-1)x + c  — variable on both sides
+    () => {
+      const a = randInt(2, 5)
+      const b = randInt(1, 6)
+      const c = n + b
+      const rhsCoef = a - 1
+      const rhsTerm = rhsCoef === 1 ? `x + ${c}` : `${rhsCoef}x + ${c}`
+      return `${a}x + ${b} = ${rhsTerm}`
+    },
+
+    // 19. ax = x + b  — variable on both sides, simpler form
+    () => {
+      const a = randInt(2, 5)
+      const b = (a - 1) * n
+      return `${a}x = x + ${b}`
+    },
+
+    // 20. (x + a + b) / 3 = c  — average of three numbers
+    () => {
+      const a = randInt(1, 8)
+      const need = (3 - ((n + a) % 3)) % 3
+      const b = need === 0 ? 3 : need
+      const c = (n + a + b) / 3
+      return `(x + ${a} + ${b}) / 3 = ${c}`
+    },
+
+    // 21. ax - cx + b = d  — three terms, combine like terms then isolate
+    () => {
+      const a = randInt(3, 6)
+      const c = randInt(1, a - 1)
+      const b = randInt(1, 8)
+      return `${a}x - ${c}x + ${b} = ${(a - c) * n + b}`
     },
   ]
 
