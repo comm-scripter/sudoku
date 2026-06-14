@@ -29,9 +29,11 @@ export default function App() {
 
   // ─── Game timer ────────────────────────────────────────────
   const timerRef = useRef(Date.now())
+  const hiddenAtRef = useRef(null)
   const [elapsed, setElapsed] = useState(0)
   const resetTimer = useCallback(() => {
     timerRef.current = Date.now()
+    hiddenAtRef.current = null
     setElapsed(0)
   }, [])
   const formatTime = (s) =>
@@ -44,6 +46,20 @@ export default function App() {
     }, 1000)
     return () => clearInterval(id)
   }, [isComplete])
+
+  // Pause the timer while the app is backgrounded/hidden
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        hiddenAtRef.current = Date.now()
+      } else if (hiddenAtRef.current !== null) {
+        timerRef.current += Date.now() - hiddenAtRef.current
+        hiddenAtRef.current = null
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
 
   // ─── Equation phase ────────────────────────────────────────
   const { totalEquations, solvedEquations, allEquationsSolved } = useMemo(() => {
@@ -161,8 +177,8 @@ export default function App() {
 
   const handlePlayAgain = useCallback(() => {
     resetTimer()
-    startNewGame(settings.difficulty)
-  }, [resetTimer, startNewGame, settings.difficulty])
+    startNewGame(settings.difficulty, opts())
+  }, [resetTimer, startNewGame, settings.difficulty, opts])
 
   const anyModalOpen = confirmingNewGame || showSettings || !!proTip || showSandbox || !!equationCell
   const handleKeyDown = useCallback((e) => {
