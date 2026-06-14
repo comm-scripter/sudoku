@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import styles from './HamburgerMenu.module.css'
+import { SecretLock } from './SecretLock.jsx'
 
 function AboutPage() {
   return (
@@ -17,6 +18,8 @@ function AboutPage() {
       <p>
         KJ
       </p>
+      <hr className={styles.secretLockDivider} />
+      <SecretLock />
     </div>
   )
 }
