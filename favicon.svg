@@ -1,5 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="20" fill="#007aff"/>
-  <text x="50" y="72" font-family="-apple-system,Arial,sans-serif" font-size="58"
-        font-weight="800" fill="white" text-anchor="middle">S</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <!-- Background -->
+  <rect width="180" height="180" rx="38" fill="#007aff"/>
+
+  <!-- Grid outer border -->
+  <rect x="19" y="19" width="142" height="142" rx="4" fill="none" stroke="white" stroke-width="3" opacity="0.95"/>
+
+  <!-- Inner vertical dividers -->
+  <line x1="66.3" y1="19" x2="66.3" y2="161" stroke="white" stroke-width="1.5" opacity="0.65"/>
+  <line x1="113.7" y1="19" x2="113.7" y2="161" stroke="white" stroke-width="1.5" opacity="0.65"/>
+
+  <!-- Inner horizontal dividers -->
+  <line x1="19" y1="66.3" x2="161" y2="66.3" stroke="white" stroke-width="1.5" opacity="0.65"/>
+  <line x1="19" y1="113.7" x2="161" y2="113.7" stroke="white" stroke-width="1.5" opacity="0.65"/>
+
+  <!-- Digits (sparse, like a sudoku clue set) -->
+  <text font-family="-apple-system, Arial, sans-serif" font-size="32" font-weight="800"
+        fill="white" text-anchor="middle" dominant-baseline="central">
+    <tspan x="42.7"  y="42.7">5</tspan>
+    <tspan x="137.3" y="42.7">3</tspan>
+    <tspan x="90"    y="90">9</tspan>
+    <tspan x="42.7"  y="137.3">7</tspan>
+    <tspan x="137.3" y="137.3">4</tspan>
+  </text>
 </svg>
