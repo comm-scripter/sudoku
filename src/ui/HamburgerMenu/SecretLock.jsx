@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react'
-import { SECRET_PAYLOAD } from '../../config/secretMessage.js'
+import { SECRET_PAYLOADS } from '../../config/secretMessage.js'
 import styles from './HamburgerMenu.module.css'
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('')
@@ -13,7 +13,6 @@ function fromB64(s) {
 
 async function decryptMessage(code) {
   const subtle = window.crypto.subtle
-  const { iterations, salt, iv, ciphertext } = SECRET_PAYLOAD
   const keyMaterial = await subtle.importKey(
     'raw',
     new TextEncoder().encode(code),
@@ -21,19 +20,26 @@ async function decryptMessage(code) {
     false,
     ['deriveKey']
   )
-  const key = await subtle.deriveKey(
-    { name: 'PBKDF2', salt: fromB64(salt), iterations, hash: 'SHA-256' },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['decrypt']
-  )
-  const plain = await subtle.decrypt(
-    { name: 'AES-GCM', iv: fromB64(iv) },
-    key,
-    fromB64(ciphertext)
-  )
-  return new TextDecoder().decode(plain)
+  for (const { iterations, salt, iv, ciphertext } of SECRET_PAYLOADS) {
+    try {
+      const key = await subtle.deriveKey(
+        { name: 'PBKDF2', salt: fromB64(salt), iterations, hash: 'SHA-256' },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['decrypt']
+      )
+      const plain = await subtle.decrypt(
+        { name: 'AES-GCM', iv: fromB64(iv) },
+        key,
+        fromB64(ciphertext)
+      )
+      return new TextDecoder().decode(plain)
+    } catch {
+      // wrong payload for this code, try the next one
+    }
+  }
+  throw new Error('no matching payload')
 }
 
 function Wheel({ char, onPrev, onNext }) {
