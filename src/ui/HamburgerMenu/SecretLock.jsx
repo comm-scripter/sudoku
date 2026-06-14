@@ -105,17 +105,14 @@ export function SecretLock() {
     }
   }, [code])
 
-  if (status === 'success') {
-    return (
-      <div className={styles.secretMessage}>
-        <div className={styles.secretReveal}>{message}</div>
-      </div>
-    )
-  }
-
   return (
     <div className={styles.secretLock}>
-      <p className={styles.lockHint}>Enter the secret code</p>
+      <div className={styles.secretDisplay}>
+        {status === 'success'
+          ? <span className={styles.secretReveal}>{message}</span>
+          : <span className={styles.secretPlaceholder}>Enter code for secret message</span>
+        }
+      </div>
       <div className={`${styles.wheels} ${shake ? styles.shake : ''}`}>
         {indices.map((idx, i) => (
           <Wheel
