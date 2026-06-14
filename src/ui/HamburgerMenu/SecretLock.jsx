@@ -1,8 +1,15 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { SECRET_PAYLOADS } from '../../config/secretMessage.js'
 import styles from './HamburgerMenu.module.css'
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('')
+const N = CHARS.length
+const ANGLE_STEP  = 25    // degrees between adjacent items on the drum
+const RADIUS      = 78    // cylinder radius in px
+const CELL_HEIGHT = 44    // visual height per slot in px — must match .drumItem CSS
+const FRICTION    = 0.87  // velocity multiplier per inertia frame
+
+// ── Crypto helpers ─────────────────────────────────────────────────────────────
 
 function fromB64(s) {
   const binary = atob(s)
@@ -14,78 +21,190 @@ function fromB64(s) {
 async function decryptMessage(code) {
   const subtle = window.crypto.subtle
   const keyMaterial = await subtle.importKey(
-    'raw',
-    new TextEncoder().encode(code),
-    'PBKDF2',
-    false,
-    ['deriveKey']
+    'raw', new TextEncoder().encode(code), 'PBKDF2', false, ['deriveKey']
   )
   for (const { iterations, salt, iv, ciphertext } of SECRET_PAYLOADS) {
     try {
       const key = await subtle.deriveKey(
         { name: 'PBKDF2', salt: fromB64(salt), iterations, hash: 'SHA-256' },
-        keyMaterial,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['decrypt']
+        keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
       )
       const plain = await subtle.decrypt(
-        { name: 'AES-GCM', iv: fromB64(iv) },
-        key,
-        fromB64(ciphertext)
+        { name: 'AES-GCM', iv: fromB64(iv) }, key, fromB64(ciphertext)
       )
       return new TextDecoder().decode(plain)
     } catch {
-      // wrong payload for this code, try the next one
+      // wrong payload — try next
     }
   }
-  throw new Error('no matching payload')
+  throw new Error('no match')
 }
 
-function Wheel({ char, onPrev, onNext }) {
-  const idx = CHARS.indexOf(char)
-  const prevChar = CHARS[(idx - 1 + CHARS.length) % CHARS.length]
-  const nextChar = CHARS[(idx + 1) % CHARS.length]
-  const animKey = useRef(0)
-  const prevCharRef = useRef(char)
-  if (prevCharRef.current !== char) {
-    animKey.current += 1
-    prevCharRef.current = char
+// ── DrumWheel ──────────────────────────────────────────────────────────────────
+
+function DrumWheel({ index, onChange }) {
+  const offsetRef   = useRef(index)   // continuous float scroll position
+  const velRef      = useRef(0)
+  const rafRef      = useRef(null)
+  const touchRef    = useRef(null)
+  const viewportRef = useRef(null)
+  const [displayOffset, setDisplayOffset] = useState(index)
+
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }, [])
+
+  function snapTo(target) {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    const from = offsetRef.current
+    const t0   = performance.now()
+    const tick = (now) => {
+      const p   = Math.min((now - t0) / 220, 1)
+      const eased = 1 - (1 - p) ** 3        // ease-out cubic
+      const pos = from + (target - from) * eased
+      offsetRef.current = pos
+      setDisplayOffset(pos)
+      if (p < 1) {
+        rafRef.current = requestAnimationFrame(tick)
+      } else {
+        offsetRef.current = target
+        setDisplayOffset(target)
+        onChange(((Math.round(target) % N) + N) % N)
+      }
+    }
+    rafRef.current = requestAnimationFrame(tick)
   }
 
-  const touchStartY = useRef(null)
-  const handleTouchStart = (e) => { touchStartY.current = e.touches[0].clientY }
-  const handleTouchEnd = (e) => {
-    if (touchStartY.current === null) return
-    const delta = touchStartY.current - e.changedTouches[0].clientY
-    if (Math.abs(delta) > 10) delta > 0 ? onNext() : onPrev()
-    touchStartY.current = null
+  function releaseInertia() {
+    const tick = () => {
+      velRef.current    *= FRICTION
+      offsetRef.current += velRef.current
+      setDisplayOffset(offsetRef.current)
+      if (Math.abs(velRef.current) > 0.015) {
+        rafRef.current = requestAnimationFrame(tick)
+      } else {
+        snapTo(Math.round(offsetRef.current))
+      }
+    }
+    rafRef.current = requestAnimationFrame(tick)
+  }
+
+  function step(delta) {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    snapTo(Math.round(offsetRef.current) + delta)
+  }
+
+  function handleTouchStart(e) {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    velRef.current = 0
+    const y = e.touches[0].clientY
+    touchRef.current = { startY: y, startOff: offsetRef.current, lastY: y, lastT: performance.now() }
+  }
+
+  function handleTouchEnd() {
+    touchRef.current = null
+    releaseInertia()
+  }
+
+  function handleMouseDown(e) {
+    if (e.button !== 0) return
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    velRef.current = 0
+    const y = e.clientY
+    touchRef.current = { startY: y, startOff: offsetRef.current, lastY: y, lastT: performance.now() }
+
+    const onMove = (e) => {
+      if (!touchRef.current) return
+      const y   = e.clientY
+      const now = performance.now()
+      const dt  = now - touchRef.current.lastT
+      const newOff = touchRef.current.startOff + (touchRef.current.startY - y) / CELL_HEIGHT
+      if (dt > 0) velRef.current = (newOff - offsetRef.current) / dt * 16
+      offsetRef.current = newOff
+      setDisplayOffset(newOff)
+      touchRef.current.lastY = y
+      touchRef.current.lastT = now
+    }
+    const onUp = () => {
+      touchRef.current = null
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+      releaseInertia()
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
+
+  // non-passive touchmove so we can preventDefault and stop the drawer scrolling
+  useEffect(() => {
+    const el = viewportRef.current
+    if (!el) return
+    const onMove = (e) => {
+      if (!touchRef.current) return
+      e.preventDefault()
+      const y   = e.touches[0].clientY
+      const now = performance.now()
+      const dt  = now - touchRef.current.lastT
+      const newOff = touchRef.current.startOff + (touchRef.current.startY - y) / CELL_HEIGHT
+      if (dt > 0) velRef.current = (newOff - offsetRef.current) / dt * 16
+      offsetRef.current = newOff
+      setDisplayOffset(newOff)
+      touchRef.current.lastY = y
+      touchRef.current.lastT = now
+    }
+    el.addEventListener('touchmove', onMove, { passive: false })
+    return () => el.removeEventListener('touchmove', onMove)
+  }, [])
+
+  // render items on the drum surface
+  const base  = Math.floor(displayOffset)
+  const items = []
+  for (let i = -3; i <= 4; i++) {
+    const absIdx  = base + i
+    const charIdx = ((absIdx % N) + N) % N
+    const relPos  = absIdx - displayOffset
+    const angle   = -relPos * ANGLE_STEP
+    if (Math.abs(angle) >= 90) continue
+    // opacity derived from cosine — naturally full at 0°, zero at 90°
+    const opacity = Math.max(0, Math.cos((angle * Math.PI) / 180))
+    items.push(
+      <div
+        key={absIdx}
+        className={styles.drumItem}
+        style={{ transform: `rotateX(${angle}deg) translateZ(${RADIUS}px)`, opacity }}
+      >
+        {CHARS[charIdx]}
+      </div>
+    )
   }
 
   return (
-    <div className={styles.wheel} onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-      <button className={styles.wheelArrow} onClick={onPrev} aria-label="Previous">▲</button>
-      <div className={styles.wheelDrum}>
-        <span className={styles.wheelAdjacent}>{prevChar}</span>
-        <span className={styles.wheelCurrent} key={animKey.current}>{char}</span>
-        <span className={styles.wheelAdjacent}>{nextChar}</span>
+    <div className={styles.wheel}>
+      <button className={styles.wheelArrow} onClick={() => step(1)} aria-label="Next">▲</button>
+      <div
+        ref={viewportRef}
+        className={styles.drumViewport}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+      >
+        <div className={styles.drumScene}>{items}</div>
+        <div className={styles.drumSelector} aria-hidden="true" />
       </div>
-      <button className={styles.wheelArrow} onClick={onNext} aria-label="Next">▼</button>
+      <button className={styles.wheelArrow} onClick={() => step(-1)} aria-label="Previous">▼</button>
     </div>
   )
 }
 
+// ── SecretLock ─────────────────────────────────────────────────────────────────
+
 export function SecretLock() {
   const [indices, setIndices] = useState(() => Array(5).fill(0))
-  const [status, setStatus] = useState('idle') // idle | loading | success | error
+  const [status,  setStatus]  = useState('idle')
   const [message, setMessage] = useState('')
-  const [shake, setShake] = useState(false)
+  const [shake,   setShake]   = useState(false)
 
-  const shift = (wheelIdx, delta) => {
-    setIndices(prev => prev.map((v, i) =>
-      i === wheelIdx ? (v + delta + CHARS.length) % CHARS.length : v
-    ))
-  }
+  const setIndex = useCallback((wheelIdx, newIdx) => {
+    setIndices(prev => prev.map((v, i) => i === wheelIdx ? newIdx : v))
+  }, [])
 
   const code = indices.map(i => CHARS[i]).join('')
 
@@ -95,9 +214,9 @@ export function SecretLock() {
       const text = await decryptMessage(code)
       setMessage(text)
       setStatus('success')
-    } catch (err) {
+    } catch {
       if (!window.crypto?.subtle) {
-        console.error('[SecretLock] Web Crypto API unavailable — page must be served over HTTPS or localhost')
+        console.error('[SecretLock] Web Crypto unavailable — serve over HTTPS or localhost')
       }
       setStatus('error')
       setShake(true)
@@ -115,12 +234,7 @@ export function SecretLock() {
       </div>
       <div className={`${styles.wheels} ${shake ? styles.shake : ''}`}>
         {indices.map((idx, i) => (
-          <Wheel
-            key={i}
-            char={CHARS[idx]}
-            onPrev={() => shift(i, -1)}
-            onNext={() => shift(i, 1)}
-          />
+          <DrumWheel key={i} index={idx} onChange={(newIdx) => setIndex(i, newIdx)} />
         ))}
       </div>
       {status === 'error' && <p className={styles.lockError}>Incorrect code</p>}
