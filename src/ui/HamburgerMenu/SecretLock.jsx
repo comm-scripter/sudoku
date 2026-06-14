@@ -42,15 +42,73 @@ async function decryptMessage(code) {
 
 // ── DrumWheel ──────────────────────────────────────────────────────────────────
 
+const canVibrate = typeof navigator !== 'undefined' && 'vibrate' in navigator
+
+function haptic(ms = 6) {
+  if (canVibrate) navigator.vibrate(ms)
+}
+
+// Web Audio click — works on iOS where Vibration API is unavailable.
+// AudioContext is created lazily on first user gesture so autoplay policy is satisfied.
+let _audioCtx = null
+
+function getAudioCtx() {
+  if (!_audioCtx) {
+    try {
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    } catch {
+      return null
+    }
+  }
+  if (_audioCtx.state === 'suspended') _audioCtx.resume()
+  return _audioCtx
+}
+
+function playClick(gain = 0.18) {
+  const ctx = getAudioCtx()
+  if (!ctx) return
+  const t = ctx.currentTime
+  // Short noise burst shaped with a cubic decay envelope — sounds like a detent click
+  const length = Math.ceil(ctx.sampleRate * 0.025)
+  const buf = ctx.createBuffer(1, length, ctx.sampleRate)
+  const data = buf.getChannelData(0)
+  for (let i = 0; i < length; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 3)
+  }
+  const src = ctx.createBufferSource()
+  src.buffer = buf
+  const filter = ctx.createBiquadFilter()
+  filter.type = 'bandpass'
+  filter.frequency.value = 1400
+  filter.Q.value = 0.8
+  const gainNode = ctx.createGain()
+  gainNode.gain.setValueAtTime(gain, t)
+  gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.025)
+  src.connect(filter)
+  filter.connect(gainNode)
+  gainNode.connect(ctx.destination)
+  src.start(t)
+}
+
 function DrumWheel({ index, onChange }) {
   const offsetRef   = useRef(index)   // continuous float scroll position
   const velRef      = useRef(0)
   const rafRef      = useRef(null)
   const touchRef    = useRef(null)
   const viewportRef = useRef(null)
+  const lastTickRef = useRef(Math.round(index))  // last integer boundary we pulsed at
   const [displayOffset, setDisplayOffset] = useState(index)
 
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }, [])
+
+  function checkTick(newOffset) {
+    const rounded = Math.round(newOffset)
+    if (rounded !== lastTickRef.current) {
+      lastTickRef.current = rounded
+      haptic(6)
+      playClick(0.18)
+    }
+  }
 
   function snapTo(target) {
     if (rafRef.current) cancelAnimationFrame(rafRef.current)
@@ -60,6 +118,7 @@ function DrumWheel({ index, onChange }) {
       const p   = Math.min((now - t0) / 220, 1)
       const eased = 1 - (1 - p) ** 3        // ease-out cubic
       const pos = from + (target - from) * eased
+      checkTick(pos)
       offsetRef.current = pos
       setDisplayOffset(pos)
       if (p < 1) {
@@ -67,6 +126,8 @@ function DrumWheel({ index, onChange }) {
       } else {
         offsetRef.current = target
         setDisplayOffset(target)
+        haptic(12)
+        playClick(0.28)  // slightly louder on final snap
         onChange(((Math.round(target) % N) + N) % N)
       }
     }
@@ -77,6 +138,7 @@ function DrumWheel({ index, onChange }) {
     const tick = () => {
       velRef.current    *= FRICTION
       offsetRef.current += velRef.current
+      checkTick(offsetRef.current)
       setDisplayOffset(offsetRef.current)
       if (Math.abs(velRef.current) > 0.015) {
         rafRef.current = requestAnimationFrame(tick)
@@ -118,6 +180,7 @@ function DrumWheel({ index, onChange }) {
       const dt  = now - touchRef.current.lastT
       const newOff = touchRef.current.startOff + (touchRef.current.startY - y) / CELL_HEIGHT
       if (dt > 0) velRef.current = (newOff - offsetRef.current) / dt * 16
+      checkTick(newOff)
       offsetRef.current = newOff
       setDisplayOffset(newOff)
       touchRef.current.lastY = y
@@ -145,6 +208,7 @@ function DrumWheel({ index, onChange }) {
       const dt  = now - touchRef.current.lastT
       const newOff = touchRef.current.startOff + (touchRef.current.startY - y) / CELL_HEIGHT
       if (dt > 0) velRef.current = (newOff - offsetRef.current) / dt * 16
+      checkTick(newOff)
       offsetRef.current = newOff
       setDisplayOffset(newOff)
       touchRef.current.lastY = y
