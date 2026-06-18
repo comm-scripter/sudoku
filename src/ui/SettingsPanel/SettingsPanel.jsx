@@ -63,6 +63,12 @@ export function SettingsPanel({ settings, onUpdate, onClose, onEnterPuzzle }) {
         {/* Toggles */}
         <section className={styles.section}>
           <ToggleRow
+            label="Sound Effects"
+            hint="Tap and correct-guess sounds while playing"
+            checked={settings.soundEnabled}
+            onChange={v => onUpdate('soundEnabled', v)}
+          />
+          <ToggleRow
             label="Algebra Opening"
             hint="Solve equations to unlock the puzzle"
             checked={settings.algebraMode}

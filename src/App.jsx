@@ -13,11 +13,13 @@ import { SandboxModal } from './ui/SandboxModal/SandboxModal.jsx'
 import { WinModal } from './ui/WinModal/WinModal.jsx'
 import { EquationModal } from './ui/EquationModal/EquationModal.jsx'
 import { HamburgerMenu } from './ui/HamburgerMenu/HamburgerMenu.jsx'
+import { EMPTY } from './logic/CellModel.js'
+import { playCellSelect, playCorrectGuess } from './audio/GameSounds.js'
 import styles from './App.module.css'
 
 export default function App() {
   const {
-    board, selectedRow, selectedCol, difficulty,
+    board, solution, selectedRow, selectedCol, difficulty,
     notesMode, proTip, history, highlightedCells, isComplete,
     startNewGame, loadCustomPuzzle, selectCell, inputDigit, eraseCell,
     undo, toggleNotesMode, requestProTip, requestNextProTip, hideProTip, highlightTip,
@@ -101,7 +103,21 @@ export default function App() {
       return
     }
     selectCell(row, col)
-  }, [board, allEquationsSolved, selectCell])
+    if (settings.soundEnabled) playCellSelect()
+  }, [board, allEquationsSolved, selectCell, settings.soundEnabled])
+
+  // Plays the correct-guess ding before delegating to inputDigit.
+  // Checks the solution synchronously so no async/ref tracking is needed.
+  const handleDigitInput = useCallback((d, settingsObj) => {
+    if (settingsObj.soundEnabled && !notesMode && d !== EMPTY && board && solution && selectedRow !== null) {
+      const idx = selectedRow * 9 + selectedCol
+      const cell = board.cells[idx]
+      if (!cell.isGiven && cell.value === EMPTY && d === solution.cells[idx].value) {
+        playCorrectGuess()
+      }
+    }
+    inputDigit(d, settingsObj)
+  }, [notesMode, board, solution, selectedRow, selectedCol, inputDigit])
 
   const handleEquationSolve = useCallback(() => {
     if (!equationCell) return
@@ -184,11 +200,11 @@ export default function App() {
   const handleKeyDown = useCallback((e) => {
     if (anyModalOpen) return
     if (!allEquationsSolved) return
-    if (e.key >= '1' && e.key <= '9') { inputDigit(Number(e.key), settings); return }
+    if (e.key >= '1' && e.key <= '9') { handleDigitInput(Number(e.key), settings); return }
     if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { eraseCell(); return }
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); return }
     if (e.key === 'n' || e.key === 'N') { toggleNotesMode(); return }
-  }, [anyModalOpen, allEquationsSolved, inputDigit, eraseCell, undo, toggleNotesMode, settings])
+  }, [anyModalOpen, allEquationsSolved, handleDigitInput, eraseCell, undo, toggleNotesMode, settings])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
@@ -233,7 +249,7 @@ export default function App() {
       </main>
 
       <NumberPad
-        onDigit={(d) => inputDigit(d, settings)}
+        onDigit={(d) => handleDigitInput(d, settings)}
         onErase={eraseCell}
         notesMode={notesMode}
         completedDigits={completedDigits}

@@ -5,6 +5,7 @@ const DEFAULTS = {
   highlightErrors: true,
   highContrast: false,
   algebraMode: true,
+  soundEnabled: true,
 }
 
 function load() {
