@@ -74,6 +74,27 @@ function playUnlock() {
   _padlockSnd.trigger()
 }
 
+function playWrong() {
+  const ctx = getAudioCtx()
+  if (!ctx) return
+  // Two short descending tones — classic denial / "wrong answer" indicator
+  ;[0, 0.12].forEach((delay, i) => {
+    const t   = ctx.currentTime + delay
+    const osc = ctx.createOscillator()
+    osc.type  = 'sine'
+    // Second tone is slightly lower for a downward "uh-uh" feel
+    osc.frequency.setValueAtTime(200 - i * 30, t)
+    osc.frequency.exponentialRampToValueAtTime((200 - i * 30) * 0.88, t + 0.09)
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0.30, t)
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.09)
+    osc.connect(env)
+    env.connect(ctx.destination)
+    osc.start(t)
+    osc.stop(t + 0.10)
+  })
+}
+
 function playClick(gain = 0.18) {
   const ctx = getAudioCtx()
   if (!ctx) return
@@ -295,6 +316,7 @@ export function SecretLock() {
       }
       setStatus('error')
       setShake(true)
+      playWrong()
       setTimeout(() => { setShake(false); setStatus('idle') }, 600)
     }
   }, [code])
