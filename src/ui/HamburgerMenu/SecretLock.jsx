@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { SECRET_PAYLOADS } from '../../config/secretMessage.js'
+import { PadlockSound } from './PadlockSound.js'
 import styles from './HamburgerMenu.module.css'
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('')
@@ -62,6 +63,15 @@ function getAudioCtx() {
   }
   if (_audioCtx.state === 'suspended') _audioCtx.resume()
   return _audioCtx
+}
+
+let _padlockSnd = null
+
+function playUnlock() {
+  const ctx = getAudioCtx()
+  if (!ctx) return
+  if (!_padlockSnd) _padlockSnd = new PadlockSound(ctx)
+  _padlockSnd.trigger()
 }
 
 function playClick(gain = 0.18) {
@@ -278,6 +288,7 @@ export function SecretLock() {
       const text = await decryptMessage(code)
       setMessage(text)
       setStatus('success')
+      playUnlock()
     } catch {
       if (!window.crypto?.subtle) {
         console.error('[SecretLock] Web Crypto unavailable — serve over HTTPS or localhost')
