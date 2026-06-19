@@ -53,12 +53,16 @@ export function gameReducer(state, action) {
         isError: false,
       })
 
-      // Mark conflict if the placed digit clashes with a peer OR contradicts the known solution
+      // Mark conflict if the placed digit contradicts the known solution. When the
+      // solution is known, that's authoritative — a digit that's genuinely correct
+      // for this square must not be flagged just because some *other*, already-wrong
+      // cell elsewhere in the row/col/box happens to hold the same digit. Peer-conflict
+      // checking only applies as a fallback when no solution is available to check against.
       if (action.highlightErrors && nextValue !== EMPTY) {
-        const peerConflict = !isCellValid(nextBoard, row, col)
-        const solutionMismatch = state.solution != null &&
-          nextValue !== state.solution.cells[row * 9 + col].value
-        if (peerConflict || solutionMismatch) {
+        const isWrong = state.solution != null
+          ? nextValue !== state.solution.cells[row * 9 + col].value
+          : !isCellValid(nextBoard, row, col)
+        if (isWrong) {
           nextBoard = setCell(nextBoard, row, col, {
             ...getCell(nextBoard, row, col),
             isError: true,

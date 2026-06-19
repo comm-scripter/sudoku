@@ -159,11 +159,13 @@ export default function App() {
   }, [updateSetting, startNewGame, opts, history.length, solvedEquations, settings.difficulty, resetTimer])
 
   const completedDigits = useMemo(() => {
-    if (!board) return new Set()
+    if (!board || !solution) return new Set()
     const counts = new Array(10).fill(0)
-    board.cells.forEach(c => { if (c.value > 0) counts[c.value]++ })
+    board.cells.forEach((c, i) => {
+      if (c.value > 0 && c.value === solution.cells[i].value) counts[c.value]++
+    })
     return new Set([1, 2, 3, 4, 5, 6, 7, 8, 9].filter(d => counts[d] === 9))
-  }, [board])
+  }, [board, solution])
 
   const [confirmingNewGame, setConfirmingNewGame] = useState(false)
   const [showSettings, setShowSettings]           = useState(false)
