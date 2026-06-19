@@ -1,4 +1,5 @@
 import { getCell } from '../../logic/BoardState.js'
+import { EMPTY } from '../../logic/CellModel.js'
 import { Cell } from '../Cell/Cell.jsx'
 import styles from './Board.module.css'
 
@@ -6,14 +7,21 @@ export function Board({ board, selectedRow, selectedCol, highlightedCells = [], 
   if (!board) return null
 
   const selCell = selectedRow !== null ? getCell(board, selectedRow, selectedCol) : null
+  // Once the selected cell has been correctly filled in, it should read as just
+  // another same-value cell (green) rather than staying pinned in the "selected"
+  // (dark blue) state — but its row/column/box stay highlighted, since selectedRow/
+  // selectedCol are left pointing at it below. A wrong guess (isError) keeps the
+  // cell selected/dark-blue so the user can immediately retype it.
+  const anchorResolved = selCell != null && !selCell.isGiven && selCell.value !== EMPTY && !selCell.isError
 
   return (
     <div className={styles.board} role="grid" aria-label="Sudoku board">
       {Array.from({ length: 9 }, (_, row) =>
         Array.from({ length: 9 }, (_, col) => {
           const cell = getCell(board, row, col)
-          const isSelected  = row === selectedRow && col === selectedCol
-          const isRelated   = !isSelected && selCell != null && (
+          const isAnchor    = row === selectedRow && col === selectedCol
+          const isSelected  = isAnchor && !anchorResolved
+          const isRelated   = !isAnchor && selCell != null && (
             row === selectedRow ||
             col === selectedCol ||
             (Math.floor(row / 3) === Math.floor(selectedRow / 3) &&

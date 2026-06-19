@@ -153,12 +153,27 @@ export function gameReducer(state, action) {
     case 'HIDE_PRO_TIP':
       return { ...state, proTip: null }
 
-    case 'HIGHLIGHT_TIP':
+    case 'HIGHLIGHT_TIP': {
+      const cells = action.cells ?? []
+      // A single-cell tip (Naked/Hidden Single) names a concrete placement target —
+      // select it directly so the user can just tap a number. Multi-cell tips
+      // (eliminations, pairs, wings, ...) aren't a single placeable cell, so they
+      // keep the yellow highlight treatment instead.
+      if (cells.length === 1) {
+        return {
+          ...state,
+          selectedRow: cells[0].row,
+          selectedCol: cells[0].col,
+          highlightedCells: [],
+          proTip: null,
+        }
+      }
       return {
         ...state,
-        highlightedCells: action.cells ?? [],
+        highlightedCells: cells,
         proTip: null,
       }
+    }
 
     default:
       return state
