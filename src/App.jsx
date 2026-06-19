@@ -14,7 +14,7 @@ import { WinModal } from './ui/WinModal/WinModal.jsx'
 import { EquationModal } from './ui/EquationModal/EquationModal.jsx'
 import { HamburgerMenu } from './ui/HamburgerMenu/HamburgerMenu.jsx'
 import { EMPTY } from './logic/CellModel.js'
-import { playCellSelect, playCorrectGuess } from './audio/GameSounds.js'
+import { playCellSelect, playCorrectGuess, playWrongGuess, playWinFanfare } from './audio/GameSounds.js'
 import styles from './App.module.css'
 
 export default function App() {
@@ -106,14 +106,18 @@ export default function App() {
     if (settings.soundEnabled) playCellSelect()
   }, [board, allEquationsSolved, selectCell, settings.soundEnabled])
 
-  // Plays the correct-guess ding before delegating to inputDigit.
+  // Plays the correct/wrong-guess sound before delegating to inputDigit.
   // Checks the solution synchronously so no async/ref tracking is needed.
+  // Gated on `d !== cell.value` (an actual change) rather than the cell being
+  // empty, so re-guessing a digit after an earlier wrong guess still sounds —
+  // tapping the same digit again (which erases it) stays silent.
   const handleDigitInput = useCallback((d, settingsObj) => {
     if (settingsObj.soundEnabled && !notesMode && d !== EMPTY && board && solution && selectedRow !== null) {
       const idx = selectedRow * 9 + selectedCol
       const cell = board.cells[idx]
-      if (!cell.isGiven && cell.value === EMPTY && d === solution.cells[idx].value) {
-        playCorrectGuess()
+      if (!cell.isGiven && d !== cell.value) {
+        if (d === solution.cells[idx].value) playCorrectGuess()
+        else playWrongGuess()
       }
     }
     inputDigit(d, settingsObj)
@@ -158,6 +162,7 @@ export default function App() {
 
   useEffect(() => {
     if (!isComplete) return
+    if (settings.soundEnabled) playWinFanfare()
     const score = calcScore(difficulty, elapsed)
     const result = submitResult(difficulty, elapsed, score)
     setWinStats({ score, ...result })

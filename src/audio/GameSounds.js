@@ -35,6 +35,39 @@ export function playCellSelect() {
   osc.stop(t + 0.045)
 }
 
+// Wrong-guess buzz — two short descending square-wave tones, the same
+// "denial" shape as the secret-lock wrong-code cue, pitched lower and
+// buzzier so it reads as distinct from the cell-select tap.
+export function playWrongGuess() {
+  const ctx = getAudioCtx()
+  if (!ctx) return
+
+  ;[0, 0.1].forEach((delay, i) => {
+    const t    = ctx.currentTime + delay
+    const freq = 165 - i * 25
+
+    const osc = ctx.createOscillator()
+    osc.type = 'square'
+    osc.frequency.setValueAtTime(freq, t)
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.85, t + 0.09)
+
+    // Low-pass tames the square wave's harsh harmonics into a soft buzz
+    const filter = ctx.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.value = 900
+
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0.08, t)
+    env.gain.exponentialRampToValueAtTime(0.001, t + 0.09)
+
+    osc.connect(filter)
+    filter.connect(env)
+    env.connect(ctx.destination)
+    osc.start(t)
+    osc.stop(t + 0.1)
+  })
+}
+
 // Correct-guess bell ding — FM synthesis (Chowning algorithm).
 //
 // A sine carrier + sine modulator at a 1:1.4 frequency ratio is the classic
@@ -89,4 +122,31 @@ export function playCorrectGuess() {
   const stop = t + ampDecay + 0.02
   modOsc.start(t); modOsc.stop(stop)
   carrier.start(t); carrier.stop(stop)
+}
+
+// Win fanfare — four-note ascending major arpeggio (C5 E5 G5 C6), played
+// once when the puzzle is fully and correctly solved.
+export function playWinFanfare() {
+  const ctx = getAudioCtx()
+  if (!ctx) return
+  const t = ctx.currentTime
+
+  const notes = [523.25, 659.25, 783.99, 1046.50]
+  notes.forEach((freq, i) => {
+    const start = t + i * 0.11
+
+    const osc = ctx.createOscillator()
+    osc.type = 'triangle'
+    osc.frequency.value = freq
+
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0.0001, start)
+    env.gain.linearRampToValueAtTime(0.16, start + 0.015)
+    env.gain.exponentialRampToValueAtTime(0.001, start + 0.45)
+
+    osc.connect(env)
+    env.connect(ctx.destination)
+    osc.start(start)
+    osc.stop(start + 0.46)
+  })
 }
