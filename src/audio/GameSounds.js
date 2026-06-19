@@ -118,7 +118,10 @@ export function playWinFanfare() {
   if (!ctx) return
   const t = ctx.currentTime
 
-  const notes = [523.25, 659.25, 783.99, 1046.50]
+  const notes      = [523.25, 659.25, 783.99, 1046.50]
+  const peakGain   = 0.055  // per-note peak; notes overlap (ring longer than the 0.11s stagger), so loudness compounds
+  const ampDecay   = 0.32   // s — ring length per note
+
   notes.forEach((freq, i) => {
     const start = t + i * 0.11
 
@@ -128,12 +131,12 @@ export function playWinFanfare() {
 
     const env = ctx.createGain()
     env.gain.setValueAtTime(0.0001, start)
-    env.gain.linearRampToValueAtTime(0.16, start + 0.015)
-    env.gain.exponentialRampToValueAtTime(0.001, start + 0.45)
+    env.gain.linearRampToValueAtTime(peakGain, start + 0.015)
+    env.gain.exponentialRampToValueAtTime(0.001, start + ampDecay)
 
     osc.connect(env)
     env.connect(ctx.destination)
     osc.start(start)
-    osc.stop(start + 0.46)
+    osc.stop(start + ampDecay + 0.01)
   })
 }
