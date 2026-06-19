@@ -106,8 +106,14 @@ export default function App() {
     if (settings.soundEnabled) playCellSelect()
   }, [board, allEquationsSolved, selectCell, settings.soundEnabled])
 
-  // Plays the correct/wrong-guess sound before delegating to inputDigit.
-  // Checks the solution synchronously so no async/ref tracking is needed.
+  // Plays the correct/wrong/win sound before delegating to inputDigit.
+  // Checks the solution synchronously so no async/ref tracking is needed —
+  // crucially, this keeps every sound call inside the same synchronous call
+  // stack as the originating tap. iOS Safari only reliably plays audio
+  // triggered directly within a user gesture's call stack; a sound fired
+  // from a useEffect that runs after the state update commits (e.g. one
+  // keyed on `isComplete`) is a render-cycle removed from that gesture and
+  // can be dropped, especially the puzzle-complete fanfare.
   // Gated on `d !== cell.value` (an actual change) rather than the cell being
   // empty, so re-guessing a digit after an earlier wrong guess still sounds —
   // tapping the same digit again (which erases it) stays silent.
@@ -116,7 +122,11 @@ export default function App() {
       const idx = selectedRow * 9 + selectedCol
       const cell = board.cells[idx]
       if (!cell.isGiven && d !== cell.value) {
-        if (d === solution.cells[idx].value) playCorrectGuess()
+        const correct = d === solution.cells[idx].value
+        const completes = correct &&
+          board.cells.every((c, i) => i === idx || c.value === solution.cells[i].value)
+        if (completes) playWinFanfare()
+        else if (correct) playCorrectGuess()
         else playWrongGuess()
       }
     }
@@ -162,7 +172,8 @@ export default function App() {
 
   useEffect(() => {
     if (!isComplete) return
-    if (settings.soundEnabled) playWinFanfare()
+    // The win fanfare itself plays from handleDigitInput, synchronously
+    // within the finishing tap's gesture — see comment there.
     const score = calcScore(difficulty, elapsed)
     const result = submitResult(difficulty, elapsed, score)
     setWinStats({ score, ...result })

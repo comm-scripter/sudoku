@@ -1,17 +1,4 @@
-// Lazy AudioContext — created on first user gesture (satisfies autoplay policy).
-let _audioCtx = null
-
-function getAudioCtx() {
-  if (!_audioCtx) {
-    try {
-      _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    } catch {
-      return null
-    }
-  }
-  if (_audioCtx.state === 'suspended') _audioCtx.resume()
-  return _audioCtx
-}
+import { getAudioCtx } from './AudioEngine.js'
 
 // Low-frequency tap — cell selection feedback.
 // Short sine burst that pitches down slightly, mimicking a soft physical tap.

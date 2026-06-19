@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { SECRET_PAYLOADS } from '../../config/secretMessage.js'
 import { PadlockSound } from './PadlockSound.js'
+import { getAudioCtx } from '../../audio/AudioEngine.js'
 import styles from './HamburgerMenu.module.css'
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('')
@@ -47,22 +48,6 @@ const canVibrate = typeof navigator !== 'undefined' && 'vibrate' in navigator
 
 function haptic(ms = 6) {
   if (canVibrate) navigator.vibrate(ms)
-}
-
-// Web Audio click — works on iOS where Vibration API is unavailable.
-// AudioContext is created lazily on first user gesture so autoplay policy is satisfied.
-let _audioCtx = null
-
-function getAudioCtx() {
-  if (!_audioCtx) {
-    try {
-      _audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    } catch {
-      return null
-    }
-  }
-  if (_audioCtx.state === 'suspended') _audioCtx.resume()
-  return _audioCtx
 }
 
 let _padlockSnd = null
