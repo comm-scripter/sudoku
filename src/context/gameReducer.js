@@ -46,32 +46,39 @@ export function gameReducer(state, action) {
       const digit = action.digit
       const nextValue = (digit === EMPTY || digit === cell.value) ? EMPTY : digit
 
+      // Keep the cell's own pencil marks intact when placing/removing a value —
+      // notes are simply hidden while a value is shown (see Cell.jsx). Wiping them
+      // here would permanently lose a guess's notes the moment it turns out wrong.
       let nextBoard = setCell(state.board, row, col, {
         ...cell,
         value: nextValue,
-        notes: 0,
         isError: false,
       })
 
-      // Mark conflict if the placed digit contradicts the known solution. When the
-      // solution is known, that's authoritative — a digit that's genuinely correct
-      // for this square must not be flagged just because some *other*, already-wrong
-      // cell elsewhere in the row/col/box happens to hold the same digit. Peer-conflict
-      // checking only applies as a fallback when no solution is available to check against.
-      if (action.highlightErrors && nextValue !== EMPTY) {
-        const isWrong = state.solution != null
+      // Determine wrongness up front (independent of the highlightErrors display
+      // setting) — when the solution is known, that's authoritative — a digit that's
+      // genuinely correct for this square must not be flagged just because some
+      // *other*, already-wrong cell elsewhere in the row/col/box happens to hold the
+      // same digit. Peer-conflict checking only applies as a fallback when no
+      // solution is available to check against.
+      let isWrong = false
+      if (nextValue !== EMPTY) {
+        isWrong = state.solution != null
           ? nextValue !== state.solution.cells[row * 9 + col].value
           : !isCellValid(nextBoard, row, col)
-        if (isWrong) {
-          nextBoard = setCell(nextBoard, row, col, {
-            ...getCell(nextBoard, row, col),
-            isError: true,
-          })
-        }
       }
 
-      // Always remove the placed digit from every peer's pencil marks in one pass.
-      if (nextValue !== EMPTY) {
+      if (action.highlightErrors && isWrong) {
+        nextBoard = setCell(nextBoard, row, col, {
+          ...getCell(nextBoard, row, col),
+          isError: true,
+        })
+      }
+
+      // Remove the placed digit from every peer's pencil marks — but only when the
+      // guess is actually correct. A wrong guess doesn't really eliminate that digit
+      // as a candidate anywhere else, so it must not strip peers' existing notes.
+      if (nextValue !== EMPTY && !isWrong) {
         const peers = new Set(getPeerIndices(row, col))
         nextBoard = {
           cells: nextBoard.cells.map((c, i) => {
