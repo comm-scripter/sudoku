@@ -1,5 +1,131 @@
 import { getAudioCtx } from './AudioEngine.js'
 
+// ─── Pencil-note scratch sounds ────────────────────────────────────────────
+//
+// Each digit is modelled as one or two short noise bursts that mimic the
+// strokes a pencil makes when quickly writing that numeral:
+//
+//   Single stroke : 1, 6, 8
+//   Two strokes   : 2, 3, 4, 5, 7, 9
+//
+// Straight strokes use a fixed bandpass center; curved strokes sweep the
+// bandpass frequency during the burst (low→high for upward curves, high→low
+// for downward curves, up-then-down for complete loops like 6, 8, 9 circle).
+// That spectral shift is the "phase shift" that makes curves feel distinct
+// from straight lines.
+//
+// Source: pink noise (1/f spectrum) shaped by a bandpass + a parallel
+// highpass that adds paper-grain sibilance. All durations kept under 100 ms
+// so the sounds read as quick, accurate pencil marks.
+
+let _noiseBuffer = null
+
+function getNoiseBuffer(ctx) {
+  if (_noiseBuffer && _noiseBuffer.sampleRate === ctx.sampleRate) return _noiseBuffer
+  const len = Math.ceil(ctx.sampleRate * 0.4)
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate)
+  const data = buf.getChannelData(0)
+  // Kellet 7-coefficient pink noise approximation (1/f spectrum)
+  let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0
+  for (let i = 0; i < len; i++) {
+    const w = Math.random() * 2 - 1
+    b0 = 0.99886 * b0 + w * 0.0555179
+    b1 = 0.99332 * b1 + w * 0.0750759
+    b2 = 0.96900 * b2 + w * 0.1538520
+    b3 = 0.86650 * b3 + w * 0.3104856
+    b4 = 0.55000 * b4 + w * 0.5329522
+    b5 = -0.7616 * b5 - w * 0.0168980
+    data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + w * 0.5362) * 0.11
+    b6 = w * 0.115926
+  }
+  _noiseBuffer = buf
+  return buf
+}
+
+// curve: false=straight  'up'=filter sweeps high  'down'=sweeps low  'arc'=high then back
+function playStroke(ctx, t, dur, curve) {
+  const noise = ctx.createBufferSource()
+  noise.buffer = getNoiseBuffer(ctx)
+  noise.loop = true
+
+  // Bandpass models the pencil-tip scratch resonance; sweep simulates changing
+  // contact angle as the pencil moves around a curve
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  bp.Q.value = 1.3
+  if (!curve) {
+    bp.frequency.value = 3400
+  } else if (curve === 'up') {
+    bp.frequency.setValueAtTime(2800, t)
+    bp.frequency.exponentialRampToValueAtTime(5400, t + dur)
+  } else if (curve === 'down') {
+    bp.frequency.setValueAtTime(5400, t)
+    bp.frequency.exponentialRampToValueAtTime(2800, t + dur)
+  } else {
+    // 'arc': loop stroke — rises to peak midway then descends (figure-8, 6, 9 circle)
+    bp.frequency.setValueAtTime(2900, t)
+    bp.frequency.exponentialRampToValueAtTime(6000, t + dur * 0.45)
+    bp.frequency.exponentialRampToValueAtTime(2900, t + dur)
+  }
+
+  // Parallel highpass adds the high-frequency paper-grain sibilance
+  const hp = ctx.createBiquadFilter()
+  hp.type = 'highpass'
+  hp.frequency.value = 7000
+
+  const hpGain = ctx.createGain()
+  hpGain.gain.value = 0.22
+
+  // Amplitude envelope: 3 ms attack, 8 ms release — crisp and quick
+  const env = ctx.createGain()
+  const ATK = 0.003, REL = 0.008
+  env.gain.setValueAtTime(0, t)
+  env.gain.linearRampToValueAtTime(1, t + ATK)
+  env.gain.setValueAtTime(1, t + Math.max(ATK, dur - REL))
+  env.gain.linearRampToValueAtTime(0, t + dur)
+
+  const vol = ctx.createGain()
+  vol.gain.value = 0.10
+
+  noise.connect(bp)
+  bp.connect(env)
+  noise.connect(hp)
+  hp.connect(hpGain)
+  hpGain.connect(env)
+  env.connect(vol)
+  vol.connect(ctx.destination)
+
+  noise.start(t)
+  noise.stop(t + dur + 0.001)
+}
+
+const _GAP = 0.028 // lift-and-replace pause between strokes (s)
+
+// [duration_s, curve_type] per stroke, ordered as written
+const DIGIT_STROKES = {
+  1: [[0.055, false]],
+  2: [[0.048, false], [0.036, false]],
+  3: [[0.044, 'up'],  [0.044, 'down']],
+  4: [[0.036, false], [0.032, false], [0.050, false]],
+  5: [[0.042, false], [0.054, 'down']],
+  6: [[0.078, 'arc']],
+  7: [[0.034, false], [0.046, false]],
+  8: [[0.090, 'arc']],
+  9: [[0.052, 'up'],  [0.036, false]],
+}
+
+export function playPencilNote(digit) {
+  const ctx = getAudioCtx()
+  if (!ctx) return
+  const strokes = DIGIT_STROKES[digit]
+  if (!strokes) return
+  let t = ctx.currentTime
+  for (const [dur, curve] of strokes) {
+    playStroke(ctx, t, dur, curve)
+    t += dur + _GAP
+  }
+}
+
 // Low-frequency tap — cell selection feedback.
 // Short sine burst that pitches down slightly, mimicking a soft physical tap.
 export function playCellSelect() {

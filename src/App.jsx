@@ -14,7 +14,7 @@ import { WinModal } from './ui/WinModal/WinModal.jsx'
 import { EquationModal } from './ui/EquationModal/EquationModal.jsx'
 import { HamburgerMenu } from './ui/HamburgerMenu/HamburgerMenu.jsx'
 import { EMPTY } from './logic/CellModel.js'
-import { playCellSelect, playCorrectGuess, playWrongGuess, playWinFanfare } from './audio/GameSounds.js'
+import { playCellSelect, playCorrectGuess, playWrongGuess, playWinFanfare, playPencilNote } from './audio/GameSounds.js'
 import styles from './App.module.css'
 
 export default function App() {
@@ -129,6 +129,10 @@ export default function App() {
         else if (correct) playCorrectGuess()
         else playWrongGuess()
       }
+    }
+    if (settingsObj.soundEnabled && notesMode && d !== EMPTY && board && selectedRow !== null) {
+      const cell = board.cells[selectedRow * 9 + selectedCol]
+      if (!cell.isGiven) playPencilNote(d)
     }
     inputDigit(d, settingsObj)
   }, [notesMode, board, solution, selectedRow, selectedCol, inputDigit])
